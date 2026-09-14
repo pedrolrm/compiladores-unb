@@ -39,3 +39,9 @@ obj/
 .idea/
 *.swp
 *~
+
+# Flex and Bison generated files
+lex.yy.c
+*.tab.c
+*.tab.h
+*.output
