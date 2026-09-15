@@ -1,0 +1,4 @@
+site_name: Compiladores UnB
+site_description: Documentação do projeto da disciplina de Compiladores
+theme:
+  name: material
