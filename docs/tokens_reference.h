@@ -4,6 +4,10 @@
 /**
  * Enumeração dos tipos de tokens suportados pelo Analisador Léxico.
  *
+ * NOTA: este arquivo é apenas referência/documentação. Os códigos usados pelo
+ * compilador são gerados pelo Bison (src/parser.tab.h) a partir das
+ * declarações %token em src/parser.y e expostos em src/tokens.h.
+ *
  * Contém categorias para palavras-chave, identificadores, literais,
  * operadores lógicos/matemáticos e delimitadores estruturais do C.
  */
