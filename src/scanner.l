@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include "tokens.h" /* Inclui parser.tab.h (gerado pelo Bison) */
 #include <string.h>
 #include "parser.tab.h" /* Header gerado pelo Bison com a definição dos tokens */
 
@@ -19,10 +20,8 @@ int current_column = 1;
 %option nounput noinput
 
 %%
-\n          { current_column = 1; /* Reseta a coluna ao pular linha */ }
-[ \t\r]+    { /* Ignora espaços em branco, yy_user_action já atualiza a coluna */ }
-.           { 
-                printf("Lexical Error (%d:%d): %s\n", yylineno, yylloc.first_column, yytext); 
-                return TOKEN_ERROR; 
-            }
+\n                          { yycolumn = 1; /* Nova linha: reinicia a coluna */ }
+[ \t\r]+                    { /* Ignora espacos em branco */ }
+[a-zA-Z_][a-zA-Z0-9_]*      { return keyword_lookup(yytext); }
+.                           { printf("Lexical Error (%d:%d): %s\n", yylineno, yycolumn - yyleng, yytext); }
 %%
