@@ -1,12 +1,17 @@
 %{
 #include <stdio.h>
-#include "parser.tab.h" /* Gerado pelo Bison */
+#include <string.h>
+#include "parser.tab.h" /* Header gerado pelo Bison com a definição dos tokens */
 
-/* Coluna inicial do token atual (linha vem de yylineno) */
-int yycolumn = 1;
+/* Variavel global para controlar a coluna atual */
+int current_column = 1;
 
-/* Avanca a coluna antes de cada acao */
-#define YY_USER_ACTION yycolumn += yyleng;
+/* Macro executada antes de cada ação para atualizar yylloc (linha/coluna) */
+#define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line = yylineno; \
+    yylloc.first_column = current_column; \
+    yylloc.last_column = current_column + yyleng - 1; \
+    current_column += yyleng;
 %}
 
 %option noyywrap
@@ -14,7 +19,10 @@ int yycolumn = 1;
 %option nounput noinput
 
 %%
-\n          { yycolumn = 1; /* Nova linha: reinicia a coluna */ }
-[ \t\r]+    { /* Ignora espacos em branco */ }
-.           { printf("Lexical Error (%d:%d): %s\n", yylineno, yycolumn - yyleng, yytext); }
+\n          { current_column = 1; /* Reseta a coluna ao pular linha */ }
+[ \t\r]+    { /* Ignora espaços em branco, yy_user_action já atualiza a coluna */ }
+.           { 
+                printf("Lexical Error (%d:%d): %s\n", yylineno, yylloc.first_column, yytext); 
+                return TOKEN_ERROR; 
+            }
 %%
