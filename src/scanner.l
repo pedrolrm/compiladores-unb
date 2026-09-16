@@ -1,12 +1,18 @@
 %{
 #include <stdio.h>
 #include "tokens.h" /* Inclui parser.tab.h (gerado pelo Bison) */
+#include <string.h>
+#include "parser.tab.h" /* Header gerado pelo Bison com a definição dos tokens */
 
-/* Coluna inicial do token atual (linha vem de yylineno) */
-int yycolumn = 1;
+/* Variavel global para controlar a coluna atual */
+int current_column = 1;
 
-/* Avanca a coluna antes de cada acao */
-#define YY_USER_ACTION yycolumn += yyleng;
+/* Macro executada antes de cada ação para atualizar yylloc (linha/coluna) */
+#define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line = yylineno; \
+    yylloc.first_column = current_column; \
+    yylloc.last_column = current_column + yyleng - 1; \
+    current_column += yyleng;
 %}
 
 %option noyywrap
