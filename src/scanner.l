@@ -24,6 +24,7 @@ int current_column = 1;
 %x BLOCK_COMMENT
 
 %%
+
 \n                  { current_column = 1; /* Reseta a coluna ao pular linha */ }
 [ \t\r]+            { /* Ignora espaços em branco, yy_user_action já atualiza a coluna */ }
 
@@ -32,14 +33,20 @@ int current_column = 1;
 "/*"                { BEGIN(BLOCK_COMMENT); /* Entra no estado de comentário de bloco */ }
 
 <BLOCK_COMMENT>"*/" { BEGIN(INITIAL); /* Sai do estado e volta ao processamento normal */ }
-<BLOCK_COMMENT>\n   { current_column = 1; /* Reseta a coluna nas quebras de linha dentro do bloco */ }
+<BLOCK_COMMENT>\n   { current_column = 1; /* Reseta a coluna nas quebras de linha */ }
 <BLOCK_COMMENT>.    { /* Ignora qualquer outro caractere dentro do bloco */ }
-<BLOCK_COMMENT><<EOF>> { 
-                      /* Dispara erro e interrompe a execução caso o arquivo acabe no meio do comentário */
-                      fprintf(stderr, "Erro Léxico na linha %d: Comentário de bloco não fechado (EOF inesperado).\n", yylineno); 
-                      exit(1); 
-                    }
-    /* Operadores Relacionais e Lógicos Compostos (Maior prioridade de match) */
+
+<BLOCK_COMMENT><<EOF>> {
+    /* Erro caso o arquivo termine dentro de um comentário */
+    fprintf(
+        stderr,
+        "Erro Léxico na linha %d: Comentário de bloco não fechado (EOF inesperado).\n",
+        yylineno
+    );
+    exit(1);
+}
+
+/* Operadores Relacionais e Lógicos Compostos */
 "=="                { return OP_EQ; }
 "!="                { return OP_NEQ; }
 "<="                { return OP_LE; }
@@ -47,7 +54,7 @@ int current_column = 1;
 "&&"                { return OP_AND; }
 "||"                { return OP_OR; }
 
-    /* Incremento, Decremento e Atribuição Composta */
+/* Incremento, Decremento e Atribuição Composta */
 "++"                { return OP_INC; }
 "--"                { return OP_DEC; }
 "+="                { return OP_PLUS_ASSIGN; }
@@ -55,7 +62,7 @@ int current_column = 1;
 "*="                { return OP_MULT_ASSIGN; }
 "/="                { return OP_DIV_ASSIGN; }
 
-    /* Operadores Aritméticos, Relacionais e Lógicos Simples */
+/* Operadores Aritméticos, Relacionais e Lógicos Simples */
 "+"                 { return OP_PLUS; }
 "-"                 { return OP_MINUS; }
 "*"                 { return OP_MULT; }
@@ -66,11 +73,11 @@ int current_column = 1;
 ">"                 { return OP_GT; }
 "!"                 { return OP_NOT; }
 
-    /* Operador Ternário */
+/* Operador Ternário */
 "?"                 { return OP_QUESTION; }
 ":"                 { return OP_COLON; }
 
-    /* Delimitadores */
+/* Delimitadores */
 "("                 { return DELIM_LPAREN; }
 ")"                 { return DELIM_RPAREN; }
 "{"                 { return DELIM_LBRACE; }
@@ -80,8 +87,14 @@ int current_column = 1;
 ";"                 { return DELIM_SEMICOLON; }
 ","                 { return DELIM_COMMA; }
 
-.                   { 
-                        printf("Lexical Error (%d:%d): %s\n", yylineno, yylloc.first_column, yytext); 
-                        return TOKEN_ERROR; 
-                    }
+. {
+    printf(
+        "Lexical Error (%d:%d): %s\n",
+        yylineno,
+        yylloc.first_column,
+        yytext
+    );
+    return TOKEN_ERROR;
+}
+
 %%
