@@ -1,0 +1,25 @@
+123
+0
+42
+123.45
+0.5
+123.
+.75
+1e10
+1.5e-2
+
+"hello"
+"hello world"
+"linha\nnova"
+"tab\ttexto"
+"aspas: \"hello\""
+"barra: \\"
+
+'a'
+'Z'
+'1'
+'\n'
+'\t'
+'\\'
+'\''
+'\"'
