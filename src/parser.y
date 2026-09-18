@@ -76,6 +76,12 @@ void yyerror(const char *s);
 %left OP_MULT OP_DIV OP_MOD
 %precedence OP_NOT UMINUS      /* operadores unários */
 
+/* Resolução do "dangling else": o KW_ELSE tem precedência maior que um
+   comando if sem else, fazendo o parser preferir shift (else liga ao if
+   mais próximo). */
+%precedence LOWER_THAN_ELSE
+%precedence KW_ELSE
+
 %start program
 
 %%
@@ -90,6 +96,65 @@ program
 statement
     : declaration
     | expression_statement
+    | compound_statement
+    | selection_statement
+    | iteration_statement
+    | labeled_statement
+    | jump_statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Bloco de comandos: permite aninhamento arbitrário de escopos.              */
+/* ------------------------------------------------------------------------- */
+compound_statement
+    : DELIM_LBRACE DELIM_RBRACE
+    | DELIM_LBRACE statement_list DELIM_RBRACE
+    ;
+
+statement_list
+    : statement
+    | statement_list statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Seleção: if / if-else (com dangling else) e switch.                        */
+/* ------------------------------------------------------------------------- */
+selection_statement
+    : KW_IF DELIM_LPAREN expression DELIM_RPAREN statement %prec LOWER_THAN_ELSE
+    | KW_IF DELIM_LPAREN expression DELIM_RPAREN statement KW_ELSE statement
+    | KW_SWITCH DELIM_LPAREN expression DELIM_RPAREN statement
+    ;
+
+/* Rótulos do switch (case/default) tratados como labeled statements. */
+labeled_statement
+    : KW_CASE expression OP_COLON statement
+    | KW_DEFAULT OP_COLON statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Iteração: while e for (init pode ser declaração ou expressão).             */
+/* ------------------------------------------------------------------------- */
+iteration_statement
+    : KW_WHILE DELIM_LPAREN expression DELIM_RPAREN statement
+    | KW_FOR DELIM_LPAREN for_init expression_opt DELIM_SEMICOLON expression_opt DELIM_RPAREN statement
+    ;
+
+for_init
+    : declaration
+    | expression_statement
+    ;
+
+expression_opt
+    : %empty
+    | expression
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Desvios de fluxo em laços e switch.                                        */
+/* ------------------------------------------------------------------------- */
+jump_statement
+    : KW_BREAK DELIM_SEMICOLON
+    | KW_CONTINUE DELIM_SEMICOLON
     ;
 
 /* ------------------------------------------------------------------------- */
