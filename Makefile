@@ -12,5 +12,8 @@ src/lex.yy.c: src/scanner.l src/parser.tab.h
 src/parser.tab.c src/parser.tab.h: src/parser.y
 	bison -d -o src/parser.tab.c $<
 
+test: compilador
+	python3 tests/run_tests.py || python tests/run_tests.py
+
 clean:
 	rm -f compilador src/lex.yy.c src/parser.tab.c src/parser.tab.h
