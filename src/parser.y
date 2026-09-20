@@ -96,12 +96,38 @@ program
 
 statement
     : declaration
+    | function_definition
     | expression_statement
     | compound_statement
     | selection_statement
     | iteration_statement
     | labeled_statement
     | jump_statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Definição de função: tipo de retorno (incl. void), parâmetros e corpo.     */
+/* O prefixo "type_specifier IDENTIFIER" é compartilhado com declaration; a    */
+/* decisão (função vs. declaração) ocorre no token seguinte: '(' vs ','/'='/';'*/
+/* ------------------------------------------------------------------------- */
+function_definition
+    : type_specifier IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement
+    | KW_VOID       IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement
+    ;
+
+parameter_list_opt
+    : %empty
+    | KW_VOID
+    | parameter_list
+    ;
+
+parameter_list
+    : parameter
+    | parameter_list DELIM_COMMA parameter
+    ;
+
+parameter
+    : type_specifier IDENTIFIER
     ;
 
 /* ------------------------------------------------------------------------- */
@@ -156,6 +182,7 @@ expression_opt
 jump_statement
     : KW_BREAK DELIM_SEMICOLON
     | KW_CONTINUE DELIM_SEMICOLON
+    | KW_RETURN expression_opt DELIM_SEMICOLON
     ;
 
 /* ------------------------------------------------------------------------- */
@@ -222,12 +249,24 @@ expression
 
 primary_expression
     : IDENTIFIER
+    | IDENTIFIER DELIM_LPAREN argument_list_opt DELIM_RPAREN   /* chamada de função (incl. recursiva) */
     | INT_LITERAL
     | FLOAT_LITERAL
     | CHAR_LITERAL
     | STRING_LITERAL
     | KW_TRUE
     | KW_FALSE
+    ;
+
+/* Lista de argumentos de uma chamada de função. */
+argument_list_opt
+    : %empty
+    | argument_list
+    ;
+
+argument_list
+    : expression
+    | argument_list DELIM_COMMA expression
     ;
 %%
 
