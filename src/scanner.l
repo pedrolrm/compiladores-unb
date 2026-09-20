@@ -6,11 +6,24 @@
 
 int current_column = 1;
 
+/* Contador global de erros léxicos */
+int lexical_errors_count = 0;
+
 #define YY_USER_ACTION \
     yylloc.first_line = yylloc.last_line = yylineno; \
     yylloc.first_column = current_column; \
     yylloc.last_column = current_column + yyleng - 1; \
     current_column += yyleng;
+
+/*
+ * Reporta um erro léxico com mensagem padronizada, exibindo linha e coluna.
+ * Não quebra a execução abruptamente.
+ */
+void report_lexical_error(int line, int col, const char *msg)
+{
+    lexical_errors_count++;
+    fprintf(stderr, "Erro léxico na linha %d, coluna %d: %s\n", line, col, msg);
+}
 
 /*
  * Converte uma sequencia de escape para seu caractere correspondente.
@@ -100,8 +113,9 @@ ESCAPE      \\([ntrbfv\\'\"0])
 <BLOCK_COMMENT>\n   { current_column = 1; }
 <BLOCK_COMMENT>.    { /* Ignora dentro do bloco */ }
 <BLOCK_COMMENT><<EOF>> { 
-                      fprintf(stderr, "Erro Léxico na linha %d: Comentário de bloco não fechado (EOF inesperado).\n", yylineno); 
-                      exit(1); 
+                      report_lexical_error(yylineno, yylloc.first_column, "comentário de bloco não fechado (EOF inesperado)"); 
+                      BEGIN(INITIAL);
+                      return TOKEN_ERROR; 
                     }
 
 /* Palavras-chave */
@@ -165,12 +179,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
  * String iniciada mas nao fechada antes da quebra de linha.
  */
 \"([^\"\\\n]|{ESCAPE})*\n {
-    fprintf(
-        stderr,
-        "Lexical Error (%d:%d): string literal nao fechada\n",
-        yylineno,
-        yylloc.first_column
-    );
+    report_lexical_error(yylloc.first_line, yylloc.first_column, "string literal não fechada");
     current_column = 1;
     return TOKEN_ERROR;
 }
@@ -179,12 +188,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
  * String iniciada mas nao fechada ate o final do arquivo.
  */
 \"([^\"\\\n]|{ESCAPE})*$ {
-    fprintf(
-        stderr,
-        "Lexical Error (%d:%d): string literal nao fechada\n",
-        yylineno,
-        yylloc.first_column
-    );
+    report_lexical_error(yylloc.first_line, yylloc.first_column, "string literal não fechada");
     return TOKEN_ERROR;
 }
 
@@ -200,12 +204,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
  * Caractere iniciado mas nao fechado antes da quebra de linha.
  */
 '([^'\\\n]|{ESCAPE})*\n {
-    fprintf(
-        stderr,
-        "Lexical Error (%d:%d): char literal nao fechado\n",
-        yylineno,
-        yylloc.first_column
-    );
+    report_lexical_error(yylloc.first_line, yylloc.first_column, "literal de caractere não fechado");
     current_column = 1;
     return TOKEN_ERROR;
 }
@@ -214,15 +213,11 @@ ESCAPE      \\([ntrbfv\\'\"0])
  * Caractere iniciado mas nao fechado ate o final do arquivo.
  */
 '([^'\\\n]|{ESCAPE})*$ {
-    fprintf(
-        stderr,
-        "Lexical Error (%d:%d): char literal nao fechado\n",
-        yylineno,
-        yylloc.first_column
-    );
+    report_lexical_error(yylloc.first_line, yylloc.first_column, "literal de caractere não fechado");
     return TOKEN_ERROR;
 }
 
+/* Operadores */
 "=="                { return OP_EQ; }
 "!="                { return OP_NEQ; }
 "<="                { return OP_LE; }
@@ -250,6 +245,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
 "?"                 { return OP_QUESTION; }
 ":"                 { return OP_COLON; }
 
+/* Delimitadores */
 "("                 { return DELIM_LPAREN; }
 ")"                 { return DELIM_RPAREN; }
 "{"                 { return DELIM_LBRACE; }
@@ -259,8 +255,11 @@ ESCAPE      \\([ntrbfv\\'\"0])
 ";"                 { return DELIM_SEMICOLON; }
 ","                 { return DELIM_COMMA; }
 
+/* Caracteres inválidos / desconhecidos */
 .                   { 
-                        printf("Lexical Error (%d:%d): %s\n", yylineno, yylloc.first_column, yytext); 
+                        char err_msg[128];
+                        snprintf(err_msg, sizeof(err_msg), "caractere inválido '%s'", yytext);
+                        report_lexical_error(yylloc.first_line, yylloc.first_column, err_msg); 
                         return TOKEN_ERROR; 
                     }
 %%
