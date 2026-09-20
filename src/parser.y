@@ -65,10 +65,105 @@ void yyerror(const char *s);
 /* Token genérico de erro (caso haja caractere inválido) */
 %token TOKEN_ERROR
 
+/* ========================================================================= */
+/* PRECEDÊNCIA E ASSOCIATIVIDADE (menor -> maior precedência)                 */
+/* ========================================================================= */
+%precedence OP_ASSIGN OP_PLUS_ASSIGN OP_MINUS_ASSIGN OP_MULT_ASSIGN OP_DIV_ASSIGN
+%left OP_OR
+%left OP_AND
+%left OP_EQ OP_NEQ
+%left OP_LT OP_LE OP_GT OP_GE
+%left OP_PLUS OP_MINUS
+%left OP_MULT OP_DIV OP_MOD
+%precedence OP_NOT UMINUS      /* operadores unários */
+
+%start program
+
 %%
-/* Gramática básica (placeholder) */
-program: /* vazio */
-       ;
+/* ========================================================================= */
+/* ESTRUTURA BASE DO PROGRAMA                                                 */
+/* ========================================================================= */
+program
+    : %empty
+    | program statement
+    ;
+
+statement
+    : declaration
+    | expression_statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Declarações de variáveis: int/float/char/bool, com inicialização opcional  */
+/* e múltiplos declaradores separados por vírgula.                            */
+/* ------------------------------------------------------------------------- */
+declaration
+    : type_specifier init_declarator_list DELIM_SEMICOLON
+    ;
+
+type_specifier
+    : KW_INT
+    | KW_FLOAT
+    | KW_CHAR
+    | KW_BOOL
+    ;
+
+init_declarator_list
+    : init_declarator
+    | init_declarator_list DELIM_COMMA init_declarator
+    ;
+
+init_declarator
+    : IDENTIFIER
+    | IDENTIFIER OP_ASSIGN expression
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Comando de expressão (inclui atribuições) e comando vazio.                 */
+/* ------------------------------------------------------------------------- */
+expression_statement
+    : expression DELIM_SEMICOLON
+    | DELIM_SEMICOLON
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Expressões com precedência de operadores.                                  */
+/* A ambiguidade é resolvida pelas declarações de precedência acima.          */
+/* ------------------------------------------------------------------------- */
+expression
+    : IDENTIFIER OP_ASSIGN expression
+    | IDENTIFIER OP_PLUS_ASSIGN expression
+    | IDENTIFIER OP_MINUS_ASSIGN expression
+    | IDENTIFIER OP_MULT_ASSIGN expression
+    | IDENTIFIER OP_DIV_ASSIGN expression
+    | expression OP_OR expression
+    | expression OP_AND expression
+    | expression OP_EQ expression
+    | expression OP_NEQ expression
+    | expression OP_LT expression
+    | expression OP_LE expression
+    | expression OP_GT expression
+    | expression OP_GE expression
+    | expression OP_PLUS expression
+    | expression OP_MINUS expression
+    | expression OP_MULT expression
+    | expression OP_DIV expression
+    | expression OP_MOD expression
+    | OP_MINUS expression %prec UMINUS
+    | OP_NOT expression
+    | DELIM_LPAREN expression DELIM_RPAREN
+    | primary_expression
+    ;
+
+primary_expression
+    : IDENTIFIER
+    | INT_LITERAL
+    | FLOAT_LITERAL
+    | CHAR_LITERAL
+    | STRING_LITERAL
+    | KW_TRUE
+    | KW_FALSE
+    ;
 %%
 
 void yyerror(const char *s) {
