@@ -4,6 +4,7 @@
 
 extern int yylex();
 extern FILE *yyin;
+extern int lexical_errors_count;
 void yyerror(const char *s);
 %}
 
@@ -92,6 +93,10 @@ int main(int argc, char **argv) {
 
     if (source != stdin) {
         fclose(source);
+    }
+
+    if (status == 0 && lexical_errors_count > 0) {
+        return 1;
     }
     return status;
 }
