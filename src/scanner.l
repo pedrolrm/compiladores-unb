@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.tab.h"
+#include "scanner.h"
 
 int current_column = 1;
 
@@ -263,3 +264,138 @@ ESCAPE      \\([ntrbfv\\'\"0])
                         return TOKEN_ERROR; 
                     }
 %%
+
+const char *token_to_string(int token)
+{
+    switch (token) {
+        case 0:                 return "EOF";
+        case TOKEN_ERROR:       return "TOKEN_ERROR";
+
+        /* Palavras-chave */
+        case KW_INT:            return "KW_INT";
+        case KW_FLOAT:          return "KW_FLOAT";
+        case KW_CHAR:           return "KW_CHAR";
+        case KW_VOID:           return "KW_VOID";
+        case KW_IF:             return "KW_IF";
+        case KW_ELSE:           return "KW_ELSE";
+        case KW_WHILE:          return "KW_WHILE";
+        case KW_FOR:            return "KW_FOR";
+        case KW_RETURN:         return "KW_RETURN";
+        case KW_BREAK:          return "KW_BREAK";
+        case KW_CONTINUE:       return "KW_CONTINUE";
+        case KW_SWITCH:         return "KW_SWITCH";
+        case KW_CASE:           return "KW_CASE";
+        case KW_DEFAULT:        return "KW_DEFAULT";
+        case KW_DOUBLE:         return "KW_DOUBLE";
+        case KW_BOOL:           return "KW_BOOL";
+        case KW_LONG:           return "KW_LONG";
+        case KW_SHORT:          return "KW_SHORT";
+        case KW_UNSIGNED:       return "KW_UNSIGNED";
+        case KW_CONST:          return "KW_CONST";
+        case KW_STRUCT:         return "KW_STRUCT";
+        case KW_TYPEDEF:        return "KW_TYPEDEF";
+        case KW_DO:             return "KW_DO";
+        case KW_TRUE:           return "KW_TRUE";
+        case KW_FALSE:          return "KW_FALSE";
+
+        /* Identificadores e Literais */
+        case IDENTIFIER:        return "IDENTIFIER";
+        case INT_LITERAL:       return "INT_LITERAL";
+        case FLOAT_LITERAL:     return "FLOAT_LITERAL";
+        case STRING_LITERAL:    return "STRING_LITERAL";
+        case CHAR_LITERAL:      return "CHAR_LITERAL";
+
+        /* Operadores */
+        case OP_PLUS:           return "OP_PLUS";
+        case OP_MINUS:          return "OP_MINUS";
+        case OP_MULT:           return "OP_MULT";
+        case OP_DIV:            return "OP_DIV";
+        case OP_MOD:            return "OP_MOD";
+        case OP_ASSIGN:         return "OP_ASSIGN";
+        case OP_EQ:             return "OP_EQ";
+        case OP_NEQ:            return "OP_NEQ";
+        case OP_LT:             return "OP_LT";
+        case OP_LE:             return "OP_LE";
+        case OP_GT:             return "OP_GT";
+        case OP_GE:             return "OP_GE";
+        case OP_AND:            return "OP_AND";
+        case OP_OR:             return "OP_OR";
+        case OP_NOT:            return "OP_NOT";
+        case OP_INC:            return "OP_INC";
+        case OP_DEC:            return "OP_DEC";
+        case OP_PLUS_ASSIGN:    return "OP_PLUS_ASSIGN";
+        case OP_MINUS_ASSIGN:   return "OP_MINUS_ASSIGN";
+        case OP_MULT_ASSIGN:    return "OP_MULT_ASSIGN";
+        case OP_DIV_ASSIGN:     return "OP_DIV_ASSIGN";
+        case OP_QUESTION:       return "OP_QUESTION";
+        case OP_COLON:          return "OP_COLON";
+
+        /* Delimitadores */
+        case DELIM_LPAREN:      return "DELIM_LPAREN";
+        case DELIM_RPAREN:      return "DELIM_RPAREN";
+        case DELIM_LBRACE:      return "DELIM_LBRACE";
+        case DELIM_RBRACE:      return "DELIM_RBRACE";
+        case DELIM_LBRACKET:    return "DELIM_LBRACKET";
+        case DELIM_RBRACKET:    return "DELIM_RBRACKET";
+        case DELIM_SEMICOLON:   return "DELIM_SEMICOLON";
+        case DELIM_COMMA:       return "DELIM_COMMA";
+
+        default:                return "UNKNOWN_TOKEN";
+    }
+}
+
+int run_scanner(FILE *source)
+{
+    yyin = source;
+    current_column = 1;
+    yylineno = 1;
+
+    int token;
+    int token_count = 0;
+
+    printf("======================================================================\n");
+    printf("%-8s %-8s %-20s %s\n", "LINHA", "COLUNA", "TOKEN", "LEXEMA");
+    printf("======================================================================\n");
+
+    while ((token = yylex()) != 0) {
+        token_count++;
+        const char *name = token_to_string(token);
+
+        if (token == INT_LITERAL) {
+            printf("%-8d %-8d %-20s '%s' (valor: %d)\n",
+                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.intval);
+        } else if (token == FLOAT_LITERAL) {
+            printf("%-8d %-8d %-20s '%s' (valor: %g)\n",
+                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.floatval);
+        } else if (token == STRING_LITERAL) {
+            printf("%-8d %-8d %-20s '%s' (valor: \"%s\")\n",
+                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.strval ? yylval.strval : "");
+            if (yylval.strval) {
+                free(yylval.strval);
+                yylval.strval = NULL;
+            }
+        } else if (token == CHAR_LITERAL) {
+            printf("%-8d %-8d %-20s '%s' (valor: '%c')\n",
+                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.charval);
+        } else if (token == IDENTIFIER) {
+            printf("%-8d %-8d %-20s '%s'\n",
+                   yylloc.first_line, yylloc.first_column, name, yytext);
+            if (yylval.strval) {
+                free(yylval.strval);
+                yylval.strval = NULL;
+            }
+        } else {
+            printf("%-8d %-8d %-20s '%s'\n",
+                   yylloc.first_line, yylloc.first_column, name, yytext);
+        }
+    }
+
+    printf("======================================================================\n");
+    printf("Total de tokens processados: %d\n", token_count);
+    if (lexical_errors_count > 0) {
+        printf("Total de erros léxicos encontrados: %d\n", lexical_errors_count);
+    }
+    printf("======================================================================\n");
+
+    return (lexical_errors_count > 0) ? 1 : 0;
+}
