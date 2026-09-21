@@ -60,6 +60,7 @@ void yyerror(const char *s);
 %token DELIM_LBRACE DELIM_RBRACE
 %token DELIM_LBRACKET DELIM_RBRACKET
 %token DELIM_SEMICOLON DELIM_COMMA
+%token DELIM_DOT                     /* '.' acesso a campo de struct */
 
 /* Token genérico de erro (caso haja caractere inválido) */
 %token TOKEN_ERROR
@@ -190,6 +191,7 @@ jump_statement
 /* ------------------------------------------------------------------------- */
 declaration
     : type_specifier init_declarator_list DELIM_SEMICOLON
+    | type_specifier DELIM_SEMICOLON          /* ex.: definição de struct sem variável */
     ;
 
 type_specifier
@@ -197,6 +199,21 @@ type_specifier
     | KW_FLOAT
     | KW_CHAR
     | KW_BOOL
+    | struct_specifier
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Struct: definição com campos (struct P { ... }) e uso como tipo (struct P).*/
+/* Os campos reutilizam a regra de declaração (aceitam arrays e outros structs)*/
+/* ------------------------------------------------------------------------- */
+struct_specifier
+    : KW_STRUCT IDENTIFIER DELIM_LBRACE struct_declaration_list DELIM_RBRACE
+    | KW_STRUCT IDENTIFIER
+    ;
+
+struct_declaration_list
+    : declaration
+    | struct_declaration_list declaration
     ;
 
 init_declarator_list
@@ -205,8 +222,15 @@ init_declarator_list
     ;
 
 init_declarator
+    : declarator
+    | declarator OP_ASSIGN expression
+    ;
+
+/* Declarador com dimensões de array opcionais (ex.: v[10], m[3][4], buf[]). */
+declarator
     : IDENTIFIER
-    | IDENTIFIER OP_ASSIGN expression
+    | declarator DELIM_LBRACKET expression DELIM_RBRACKET
+    | declarator DELIM_LBRACKET DELIM_RBRACKET
     ;
 
 /* ------------------------------------------------------------------------- */
@@ -222,11 +246,11 @@ expression_statement
 /* A ambiguidade é resolvida pelas declarações de precedência acima.          */
 /* ------------------------------------------------------------------------- */
 expression
-    : IDENTIFIER OP_ASSIGN expression
-    | IDENTIFIER OP_PLUS_ASSIGN expression
-    | IDENTIFIER OP_MINUS_ASSIGN expression
-    | IDENTIFIER OP_MULT_ASSIGN expression
-    | IDENTIFIER OP_DIV_ASSIGN expression
+    : postfix_expression OP_ASSIGN expression
+    | postfix_expression OP_PLUS_ASSIGN expression
+    | postfix_expression OP_MINUS_ASSIGN expression
+    | postfix_expression OP_MULT_ASSIGN expression
+    | postfix_expression OP_DIV_ASSIGN expression
     | expression OP_OR expression
     | expression OP_AND expression
     | expression OP_EQ expression
@@ -243,7 +267,15 @@ expression
     | OP_MINUS expression %prec UMINUS
     | OP_NOT expression
     | DELIM_LPAREN expression DELIM_RPAREN
-    | primary_expression
+    | postfix_expression
+    ;
+
+/* Pós-fixados: indexação de array e acesso a campo de struct, encadeáveis
+   (ex.: a[i].campo, s.v[j], m[i][j], f().campo). */
+postfix_expression
+    : primary_expression
+    | postfix_expression DELIM_LBRACKET expression DELIM_RBRACKET
+    | postfix_expression DELIM_DOT IDENTIFIER
     ;
 
 primary_expression
