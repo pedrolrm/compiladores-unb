@@ -1,10 +1,11 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "scanner.h"
 
 extern int yylex();
 extern FILE *yyin;
-extern int lexical_errors_count;
 void yyerror(const char *s);
 %}
 
@@ -276,26 +277,49 @@ void yyerror(const char *s) {
 }
 
 int main(int argc, char **argv) {
-    /* Le do arquivo informado ou da entrada padrao */
+    int parse_mode = 0;
+    char *filepath = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--parse") == 0 || strcmp(argv[i], "-p") == 0) {
+            parse_mode = 1;
+        } else if (strcmp(argv[i], "--scan") == 0 || strcmp(argv[i], "-s") == 0) {
+            parse_mode = 0;
+        } else if (argv[i][0] != '-') {
+            filepath = argv[i];
+        }
+    }
+
     FILE *source = stdin;
 
-    if (argc > 1) {
-        source = fopen(argv[1], "r");
+    if (filepath) {
+        source = fopen(filepath, "r");
         if (!source) {
-            perror(argv[1]);
+            perror(filepath);
             return 1;
         }
     }
-    yyin = source;
 
-    int status = yyparse();
+    int status = 0;
+
+    /*
+     * Modo Scanner (padrão via CLI ao passar arquivo .c):
+     * Consome a entrada e imprime a listagem formatada dos tokens gerados.
+     * Caso o usuário passe a flag --parse ou -p, executa a análise sintática do Bison.
+     */
+    if (parse_mode) {
+        yyin = source;
+        status = yyparse();
+        if (status == 0 && lexical_errors_count > 0) {
+            status = 1;
+        }
+    } else {
+        status = run_scanner(source);
+    }
 
     if (source != stdin) {
         fclose(source);
     }
 
-    if (status == 0 && lexical_errors_count > 0) {
-        return 1;
-    }
     return status;
 }
