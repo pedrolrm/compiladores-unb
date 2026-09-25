@@ -14,14 +14,20 @@
 *.so
 *.so.*
 *.dylib
+*.dll
 
 # Executables
+compilador
+compilador.exe
 *.exe
 *.out
 *.app
 *.i*86
 *.x86_64
 *.hex
+
+# Test artifacts
+_temp*
 
 # Build directories
 build/
