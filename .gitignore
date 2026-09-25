@@ -33,6 +33,7 @@ _temp*
 build/
 bin/
 obj/
+site/
 
 # Debug files
 *.dSYM/
