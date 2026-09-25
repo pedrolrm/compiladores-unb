@@ -572,12 +572,11 @@
 </blockquote>
 <hr />
 <h2 id="estrutura-da-pipeline">Estrutura da Pipeline</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>flowchart LR
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    A["Código Fonte (.c)"] --&gt; B["Analisador Léxico (Flex)"]
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    B --&gt; C["Analisador Sintático (Bison)"]
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    C --&gt; D["Analisador Semântico &amp; AST"]
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    D --&gt; E["Geração de Código (Python)"]
-</code></pre></div>
+<pre class="mermaid"><code>flowchart LR
+    A["Código Fonte (.c)"] --&gt; B["Analisador Léxico (Flex)"]
+    B --&gt; C["Analisador Sintático (Bison)"]
+    C --&gt; D["Analisador Semântico &amp; AST"]
+    D --&gt; E["Geração de Código (Python)"]</code></pre>
 <ol>
 <li><strong>Analisador Léxico (Scanner):</strong> Responsável pela conversão do fluxo de caracteres em tokens padronizados, descarte de comentários/espaços e reporte detalhado de erros léxicos com linha e coluna.</li>
 <li><strong>Analisador Sintático (Parser):</strong> Aplica a Gramática Livre de Contexto (GLC) sobre os tokens, validando a estrutura sintática das declarações, comandos e expressões.</li>
@@ -651,6 +650,8 @@
     
     
       <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
       
     
   </body>

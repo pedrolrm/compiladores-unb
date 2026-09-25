@@ -395,10 +395,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-mismatch-de-paradigmas-de-memoria-c-rightarrow-python" class="md-nav__link">
+  <a href="#1-mismatch-de-paradigmas-de-memoria-c-python" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Mismatch de Paradigmas de Memória (C $\rightarrow$ Python)
+        1. Mismatch de Paradigmas de Memória (C → Python)
       
     </span>
   </a>
@@ -605,10 +605,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-mismatch-de-paradigmas-de-memoria-c-rightarrow-python" class="md-nav__link">
+  <a href="#1-mismatch-de-paradigmas-de-memoria-c-python" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Mismatch de Paradigmas de Memória (C $\rightarrow$ Python)
+        1. Mismatch de Paradigmas de Memória (C → Python)
       
     </span>
   </a>
@@ -713,13 +713,12 @@
 <hr />
 <h3 id="por-que-a-manipulacao-de-memoria-e-tao-dificil">Por que a manipulação de memória é tão difícil?</h3>
 <p>A manipulação de memória de baixo nível é um dos aspectos mais desafiadores da teoria e prática da construção de compiladores. A decisão de excluí-la decorreu de quatro fatores de alta complexidade técnica:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>flowchart TD
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    A["Desafios do Gerenciamento de Memória"] --&gt; B["1. Complexidade Sintática e Léxica"]
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    A --&gt; C["2. Análise Semântica e Checagem de Tipos"]
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    A --&gt; D["3. Choque de Paradigmas (C vs Python)"]
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    A --&gt; E["4. Viabilidade do Cronograma"]
-</code></pre></div>
-<h4 id="1-mismatch-de-paradigmas-de-memoria-c-rightarrow-python">1. Mismatch de Paradigmas de Memória (C $\rightarrow$ Python)</h4>
+<pre class="mermaid"><code>flowchart TD
+    A["Desafios do Gerenciamento de Memória"] --&gt; B["1. Complexidade Sintática e Léxica"]
+    A --&gt; C["2. Análise Semântica e Checagem de Tipos"]
+    A --&gt; D["3. Choque de Paradigmas (C vs Python)"]
+    A --&gt; E["4. Viabilidade do Cronograma"]</code></pre>
+<h4 id="1-mismatch-de-paradigmas-de-memoria-c-python">1. Mismatch de Paradigmas de Memória (C → Python)</h4>
 <p>A principal dificuldade reside no abismo conceitual entre o modelo de memória de C e o de Python:</p>
 <ul>
 <li><strong>Modelo de C:</strong> Memória linear, contígua e exposta diretamente como endereços numéricos em bytes. O programador controla o ciclo de vida de objetos no <em>stack</em> (pilha) e no <em>heap</em>, operando diretamente sobre ponteiros de memória.</li>
@@ -849,6 +848,8 @@
     
     
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
       
     
   </body>
