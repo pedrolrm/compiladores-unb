@@ -4,6 +4,7 @@ Suite de Testes Automatizados para o Analisador Léxico (Scanner)
 Disciplina de Compiladores - UnB
 """
 
+import ctypes
 import os
 import subprocess
 import sys
@@ -30,16 +31,60 @@ def find_compiler():
             return c
     return None
 
-def run_test_case(compiler, filepath, expect_success, expected_tokens=None, expected_errors=None):
-    cmd = [compiler, filepath]
-    try:
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
-    except Exception as e:
-        return False, f"Falha na execução: {e}"
+_lib_scanner = None
+def get_scanner_dll():
+    global _lib_scanner
+    if _lib_scanner is None:
+        candidates = [
+            os.path.join(".", "scanner_test.dll"),
+            os.path.join("..", "scanner_test.dll"),
+            os.path.join(".", "libscanner.so"),
+            os.path.join("..", "libscanner.so"),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                try:
+                    _lib_scanner = ctypes.CDLL(c)
+                    _lib_scanner.run_scanner_file_to_files.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
+                    _lib_scanner.run_scanner_file_to_files.restype = ctypes.c_int
+                    break
+                except Exception:
+                    pass
+    return _lib_scanner
 
-    stdout = proc.stdout
-    stderr = proc.stderr
-    exit_code = proc.returncode
+def run_test_case(compiler, filepath, expect_success, expected_tokens=None, expected_errors=None):
+    stdout = ""
+    stderr = ""
+    exit_code = 0
+    use_dll = False
+
+    if compiler:
+        try:
+            cmd = [compiler, filepath]
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace", timeout=5)
+            stdout = proc.stdout
+            stderr = proc.stderr
+            exit_code = proc.returncode
+        except Exception:
+            use_dll = True
+    else:
+        use_dll = True
+
+    if use_dll:
+        lib = get_scanner_dll()
+        if not lib:
+            return False, "Nem o executável nem a biblioteca do compilador puderam ser executados."
+        out_temp = os.path.join("tests", "_temp_stdout.txt")
+        err_temp = os.path.join("tests", "_temp_stderr.txt")
+        exit_code = lib.run_scanner_file_to_files(filepath.encode("utf-8"), out_temp.encode("utf-8"), err_temp.encode("utf-8"))
+        if os.path.exists(out_temp):
+            with open(out_temp, "r", encoding="utf-8", errors="replace") as f:
+                stdout = f.read()
+            os.remove(out_temp)
+        if os.path.exists(err_temp):
+            with open(err_temp, "r", encoding="utf-8", errors="replace") as f:
+                stderr = f.read()
+            os.remove(err_temp)
 
     if expect_success:
         if exit_code != 0:
