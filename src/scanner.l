@@ -188,7 +188,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
     /*
      * String iniciada mas nao fechada ate o final do arquivo.
      */
-\"([^\"\\\n]|{ESCAPE})*$ {
+\"([^\"\\\n]|{ESCAPE})* {
     report_lexical_error(yylloc.first_line, yylloc.first_column, "string literal não fechada");
     return TOKEN_ERROR;
 }
@@ -213,7 +213,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
     /*
      * Caractere iniciado mas nao fechado ate o final do arquivo.
      */
-'([^'\\\n]|{ESCAPE})*$ {
+'([^'\\\n]|{ESCAPE})* {
     report_lexical_error(yylloc.first_line, yylloc.first_column, "literal de caractere não fechado");
     return TOKEN_ERROR;
 }
