@@ -119,7 +119,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
                       return TOKEN_ERROR; 
                     }
 
-/* Palavras-chave */
+    /* Palavras-chave */
 "int"       { return KW_INT; }
 "float"     { return KW_FLOAT; }
 "char"      { return KW_CHAR; }
@@ -146,79 +146,79 @@ ESCAPE      \\([ntrbfv\\'\"0])
 "true"      { return KW_TRUE; }
 "false"     { return KW_FALSE; }
 
-/* Identificadores */
+    /* Identificadores */
 {IDENTIFIER} {
     yylval.strval = strdup(yytext);
     return IDENTIFIER;
 }
 
-/*
- * Literais float (deve vir antes de int para casar 10.5 como um unico token).
- */
+    /*
+     * Literais float (deve vir antes de int para casar 10.5 como um unico token).
+     */
 (({DIGITS}"."{DIGIT}*|"."{DIGITS})({EXPONENT})?|{DIGITS}{EXPONENT}) {
     yylval.floatval = strtof(yytext, NULL);
     return FLOAT_LITERAL;
 }
 
-/*
- * Literais inteiros.
- */
+    /*
+     * Literais inteiros.
+     */
 {DIGITS} {
     yylval.intval = atoi(yytext);
     return INT_LITERAL;
 }
 
-/*
- * String literal fechado corretamente.
- */
+    /*
+     * String literal fechado corretamente.
+     */
 \"([^\"\\\n]|{ESCAPE})*\" {
     yylval.strval = decode_string_literal(yytext);
     return STRING_LITERAL;
 }
 
-/*
- * String iniciada mas nao fechada antes da quebra de linha.
- */
+    /*
+     * String iniciada mas nao fechada antes da quebra de linha.
+     */
 \"([^\"\\\n]|{ESCAPE})*\n {
     report_lexical_error(yylloc.first_line, yylloc.first_column, "string literal não fechada");
     current_column = 1;
     return TOKEN_ERROR;
 }
 
-/*
- * String iniciada mas nao fechada ate o final do arquivo.
- */
+    /*
+     * String iniciada mas nao fechada ate o final do arquivo.
+     */
 \"([^\"\\\n]|{ESCAPE})*$ {
     report_lexical_error(yylloc.first_line, yylloc.first_column, "string literal não fechada");
     return TOKEN_ERROR;
 }
 
-/*
- * Literal de caractere fechado corretamente.
- */
+    /*
+     * Literal de caractere fechado corretamente.
+     */
 '([^'\\\n]|{ESCAPE})' {
     yylval.charval = decode_char_literal(yytext);
     return CHAR_LITERAL;
 }
 
-/*
- * Caractere iniciado mas nao fechado antes da quebra de linha.
- */
+    /*
+     * Caractere iniciado mas nao fechado antes da quebra de linha.
+     */
 '([^'\\\n]|{ESCAPE})*\n {
     report_lexical_error(yylloc.first_line, yylloc.first_column, "literal de caractere não fechado");
     current_column = 1;
     return TOKEN_ERROR;
 }
 
-/*
- * Caractere iniciado mas nao fechado ate o final do arquivo.
- */
+    /*
+     * Caractere iniciado mas nao fechado ate o final do arquivo.
+     */
 '([^'\\\n]|{ESCAPE})*$ {
     report_lexical_error(yylloc.first_line, yylloc.first_column, "literal de caractere não fechado");
     return TOKEN_ERROR;
 }
 
-/* Operadores */
+    /* Operadores */
 "=="                { return OP_EQ; }
 "!="                { return OP_NEQ; }
 "<="                { return OP_LE; }
@@ -246,7 +246,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
 "?"                 { return OP_QUESTION; }
 ":"                 { return OP_COLON; }
 
-/* Delimitadores */
+    /* Delimitadores */
 "("                 { return DELIM_LPAREN; }
 ")"                 { return DELIM_RPAREN; }
 "{"                 { return DELIM_LBRACE; }
@@ -256,7 +256,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
 ";"                 { return DELIM_SEMICOLON; }
 ","                 { return DELIM_COMMA; }
 
-/* Caracteres inválidos / desconhecidos */
+    /* Caracteres inválidos / desconhecidos */
 .                   { 
                         char err_msg[128];
                         snprintf(err_msg, sizeof(err_msg), "caractere inválido '%s'", yytext);
