@@ -1,0 +1,1310 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentação do compilador desenvolvido para a disciplina de Compiladores (UnB)">
+      
+      
+      
+        <link rel="canonical" href="https://pedrolrm.github.io/compiladores-unb/tokens/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../gramatica/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Especificação Léxica - Compiladores UnB</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tokens-e-expressoes-regulares" class="md-skip">
+          Pular para conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href=".." title="Compiladores UnB" class="md-header__button md-logo" aria-label="Compiladores UnB" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Compiladores UnB
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Especificação Léxica
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mudar para modo escuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Mudar para modo escuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mudar para modo claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Mudar para modo claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando busca
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pedrolrm/compiladores-unb" title="Ir para repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pedrolrm/compiladores-unb
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Compiladores UnB" class="md-nav__button md-logo" aria-label="Compiladores UnB" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Compiladores UnB
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pedrolrm/compiladores-unb" title="Ir para repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pedrolrm/compiladores-unb
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Início
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Especificação Léxica
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Especificação Léxica
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#visao-geral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visão Geral
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#palavras-reservadas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Palavras Reservadas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identificadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identificadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#literais" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literais
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Literais">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#numeros-inteiros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Números Inteiros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#numeros-de-ponto-flutuante" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Números de Ponto Flutuante
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Strings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caracteres" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caracteres
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#literais-booleanos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literais Booleanos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delimitadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delimitadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comentarios-e-espacos-em-branco" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comentários e Espaços em Branco
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validacao-das-expressoes-regulares" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validação das Expressões Regulares
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validação das Expressões Regulares">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#casos-validos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Casos Válidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#casos-invalidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Casos Inválidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referências
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gramatica/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gramática Livre de Contexto (GLC)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#visao-geral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visão Geral
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#palavras-reservadas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Palavras Reservadas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identificadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identificadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#literais" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literais
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Literais">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#numeros-inteiros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Números Inteiros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#numeros-de-ponto-flutuante" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Números de Ponto Flutuante
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Strings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caracteres" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caracteres
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#literais-booleanos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literais Booleanos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delimitadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delimitadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comentarios-e-espacos-em-branco" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comentários e Espaços em Branco
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validacao-das-expressoes-regulares" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validação das Expressões Regulares
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validação das Expressões Regulares">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#casos-validos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Casos Válidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#casos-invalidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Casos Inválidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referências
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="tokens-e-expressoes-regulares">Tokens e Expressões Regulares</h1>
+<p>Esta página documenta o levantamento de tokens da linguagem alvo do compilador, conforme a issue <strong>#5</strong>, cobrindo palavras reservadas, identificadores, literais, operadores, delimitadores e as validações feitas sobre as expressões regulares propostas.</p>
+<p>Este documento cobre apenas a <strong>especificação léxica</strong>: os nomes de token seguem exatamente o enum <code>TokenType</code> definido em <code>docs/tokens_reference.h</code>. A implementação do analisador léxico em si (<code>src/scanner.l</code>) é tratada separadamente na issue <strong>#6</strong>.</p>
+<h2 id="visao-geral">Visão Geral</h2>
+<p>A linguagem alvo é uma variação simplificada de C. Os tokens se dividem em seis categorias:</p>
+<ul>
+<li><strong>Palavras reservadas</strong>: identificadores com significado fixo na linguagem (<code>int</code>, <code>if</code>, <code>while</code>, etc).</li>
+<li><strong>Identificadores</strong>: nomes de variáveis, funções e tipos definidos pelo usuário.</li>
+<li><strong>Literais</strong>: valores constantes escritos diretamente no código-fonte (inteiros, ponto flutuante, strings, caracteres, booleanos).</li>
+<li><strong>Operadores</strong>: símbolos que representam operações aritméticas, relacionais, lógicas, de atribuição e ternárias.</li>
+<li><strong>Delimitadores</strong>: símbolos estruturais como parênteses, chaves e ponto-e-vírgula.</li>
+<li><strong>Comentários e espaços em branco</strong>: ignorados pelo analisador léxico, não geram token.</li>
+</ul>
+<p>Alguns blocos de construção reutilizados em várias regex:</p>
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>Regex</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DIGIT</code></td>
+<td><code>[0-9]</code></td>
+<td>Um dígito decimal</td>
+</tr>
+<tr>
+<td><code>DIGITS</code></td>
+<td><code>[0-9]+</code></td>
+<td>Uma ou mais dígitos</td>
+</tr>
+<tr>
+<td><code>LETTER</code></td>
+<td><code>[a-zA-Z_]</code></td>
+<td>Uma letra ou underscore</td>
+</tr>
+<tr>
+<td><code>EXPONENT</code></td>
+<td><code>[eE][+-]?[0-9]+</code></td>
+<td>Notação exponencial (<code>e10</code>, <code>E-3</code>)</td>
+</tr>
+<tr>
+<td><code>ESCAPE</code></td>
+<td><code>\[ntrbfv\'"0]</code></td>
+<td>Sequência de escape válida</td>
+</tr>
+</tbody>
+</table>
+<h2 id="palavras-reservadas">Palavras Reservadas</h2>
+<p>Palavras reservadas não podem ser usadas como identificadores. Todas em minúsculas.</p>
+<table>
+<thead>
+<tr>
+<th>Palavra reservada</th>
+<th>Token</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>KW_INT</code></td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td><code>KW_FLOAT</code></td>
+</tr>
+<tr>
+<td><code>char</code></td>
+<td><code>KW_CHAR</code></td>
+</tr>
+<tr>
+<td><code>void</code></td>
+<td><code>KW_VOID</code></td>
+</tr>
+<tr>
+<td><code>if</code></td>
+<td><code>KW_IF</code></td>
+</tr>
+<tr>
+<td><code>else</code></td>
+<td><code>KW_ELSE</code></td>
+</tr>
+<tr>
+<td><code>while</code></td>
+<td><code>KW_WHILE</code></td>
+</tr>
+<tr>
+<td><code>for</code></td>
+<td><code>KW_FOR</code></td>
+</tr>
+<tr>
+<td><code>return</code></td>
+<td><code>KW_RETURN</code></td>
+</tr>
+<tr>
+<td><code>break</code></td>
+<td><code>KW_BREAK</code></td>
+</tr>
+<tr>
+<td><code>continue</code></td>
+<td><code>KW_CONTINUE</code></td>
+</tr>
+<tr>
+<td><code>switch</code></td>
+<td><code>KW_SWITCH</code></td>
+</tr>
+<tr>
+<td><code>case</code></td>
+<td><code>KW_CASE</code></td>
+</tr>
+<tr>
+<td><code>default</code></td>
+<td><code>KW_DEFAULT</code></td>
+</tr>
+<tr>
+<td><code>double</code></td>
+<td><code>KW_DOUBLE</code></td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td><code>KW_BOOL</code></td>
+</tr>
+<tr>
+<td><code>long</code></td>
+<td><code>KW_LONG</code></td>
+</tr>
+<tr>
+<td><code>short</code></td>
+<td><code>KW_SHORT</code></td>
+</tr>
+<tr>
+<td><code>unsigned</code></td>
+<td><code>KW_UNSIGNED</code></td>
+</tr>
+<tr>
+<td><code>const</code></td>
+<td><code>KW_CONST</code></td>
+</tr>
+<tr>
+<td><code>struct</code></td>
+<td><code>KW_STRUCT</code></td>
+</tr>
+<tr>
+<td><code>typedef</code></td>
+<td><code>KW_TYPEDEF</code></td>
+</tr>
+<tr>
+<td><code>do</code></td>
+<td><code>KW_DO</code></td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td><code>KW_TRUE</code></td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td><code>KW_FALSE</code></td>
+</tr>
+</tbody>
+</table>
+<p>Cada palavra reservada é reconhecida como um literal exato (ex.: <code>"int"</code>, <code>"while"</code>), sem variação.</p>
+<h2 id="identificadores">Identificadores</h2>
+<p>Um identificador começa com uma letra ou <code>_</code>, seguido de zero ou mais letras, dígitos ou <code>_</code>.</p>
+<p>Regex (<code>IDENTIFIER</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[a-zA-Z_][a-zA-Z_0-9]*
+</code></pre></div>
+<p>Se a sequência casar com uma palavra reservada (ex.: <code>if</code>), o token gerado é o da palavra-chave, não <code>IDENTIFIER</code> — a regra de palavra-chave tem prioridade sobre a regra genérica de identificador.</p>
+<p>Exemplos válidos: <code>salario_base</code>, <code>inicial</code>, <code>_temp</code>, <code>x1</code>.
+Exemplos inválidos: <code>1x</code> (começa com dígito), <code>sal-ario</code> (hífen não é permitido).</p>
+<h2 id="literais">Literais</h2>
+<h3 id="numeros-inteiros">Números Inteiros</h3>
+<p>Token: <code>INT_LITERAL</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>[0-9]+
+</code></pre></div>
+<p>Exemplos válidos: <code>123</code>, <code>0</code>, <code>42</code>.</p>
+<h3 id="numeros-de-ponto-flutuante">Números de Ponto Flutuante</h3>
+<p>Token: <code>FLOAT_LITERAL</code>. Cobre notação decimal com parte fracionária opcional em qualquer lado do ponto, e notação exponencial.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>([0-9]+\.[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?|[0-9]+[eE][+-]?[0-9]+
+</code></pre></div>
+<p>Esta regra precisa ser avaliada antes da regra de inteiro para que <code>10.5</code> seja reconhecido como um único token de ponto flutuante, e não como <code>10</code> seguido de <code>.</code> e <code>5</code>.</p>
+<p>Exemplos válidos: <code>123.45</code>, <code>0.5</code>, <code>123.</code>, <code>.75</code>, <code>1e10</code>, <code>1.5e-2</code>.</p>
+<h3 id="strings">Strings</h3>
+<p>Token: <code>STRING_LITERAL</code>. Uma string é delimitada por aspas duplas, sem quebra de linha literal dentro dela, aceitando sequências de escape.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>"([^"\\\n]|\[ntrbfv\'"0])*"
+</code></pre></div>
+<p>Exemplos válidos: <code>"hello"</code>, <code>"hello world"</code>, <code>"linha\nnova"</code>, <code>"tab\ttexto"</code>, <code>"aspas: \"hello\""</code>, <code>"barra: \\"</code>.</p>
+<p>Uma string iniciada e não fechada antes do fim da linha ou do arquivo é um erro léxico (ver seção de Validação).</p>
+<h3 id="caracteres">Caracteres</h3>
+<p>Token: <code>CHAR_LITERAL</code>. Exatamente um caractere (ou uma sequência de escape) entre aspas simples.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>'([^'\\\n]|\[ntrbfv\'"0])'
+</code></pre></div>
+<p>Exemplos válidos: <code>'a'</code>, <code>'Z'</code>, <code>'1'</code>, <code>'\n'</code>, <code>'\t'</code>, <code>'\\'</code>, <code>'\''</code>, <code>'\"'</code>.</p>
+<h3 id="literais-booleanos">Literais Booleanos</h3>
+<p><code>true</code> e <code>false</code> são tratados como palavras reservadas (<code>KW_TRUE</code>, <code>KW_FALSE</code>), listadas na seção de Palavras Reservadas — não têm regex própria além da correspondência literal.</p>
+<h2 id="operadores">Operadores</h2>
+<table>
+<thead>
+<tr>
+<th>Categoria</th>
+<th>Símbolo</th>
+<th>Token</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aritmético</td>
+<td><code>+</code></td>
+<td><code>OP_PLUS</code></td>
+</tr>
+<tr>
+<td>Aritmético</td>
+<td><code>-</code></td>
+<td><code>OP_MINUS</code></td>
+</tr>
+<tr>
+<td>Aritmético</td>
+<td><code>*</code></td>
+<td><code>OP_MULT</code></td>
+</tr>
+<tr>
+<td>Aritmético</td>
+<td><code>/</code></td>
+<td><code>OP_DIV</code></td>
+</tr>
+<tr>
+<td>Aritmético</td>
+<td><code>%</code></td>
+<td><code>OP_MOD</code></td>
+</tr>
+<tr>
+<td>Relacional</td>
+<td><code>==</code></td>
+<td><code>OP_EQ</code></td>
+</tr>
+<tr>
+<td>Relacional</td>
+<td><code>!=</code></td>
+<td><code>OP_NEQ</code></td>
+</tr>
+<tr>
+<td>Relacional</td>
+<td><code>&lt;</code></td>
+<td><code>OP_LT</code></td>
+</tr>
+<tr>
+<td>Relacional</td>
+<td><code>&lt;=</code></td>
+<td><code>OP_LE</code></td>
+</tr>
+<tr>
+<td>Relacional</td>
+<td><code>&gt;</code></td>
+<td><code>OP_GT</code></td>
+</tr>
+<tr>
+<td>Relacional</td>
+<td><code>&gt;=</code></td>
+<td><code>OP_GE</code></td>
+</tr>
+<tr>
+<td>Lógico</td>
+<td><code>&amp;&amp;</code></td>
+<td><code>OP_AND</code></td>
+</tr>
+<tr>
+<td>Lógico</td>
+<td><code>||</code></td>
+<td><code>OP_OR</code></td>
+</tr>
+<tr>
+<td>Lógico</td>
+<td><code>!</code></td>
+<td><code>OP_NOT</code></td>
+</tr>
+<tr>
+<td>Atribuição</td>
+<td><code>=</code></td>
+<td><code>OP_ASSIGN</code></td>
+</tr>
+<tr>
+<td>Atribuição composta</td>
+<td><code>+=</code></td>
+<td><code>OP_PLUS_ASSIGN</code></td>
+</tr>
+<tr>
+<td>Atribuição composta</td>
+<td><code>-=</code></td>
+<td><code>OP_MINUS_ASSIGN</code></td>
+</tr>
+<tr>
+<td>Atribuição composta</td>
+<td><code>*=</code></td>
+<td><code>OP_MULT_ASSIGN</code></td>
+</tr>
+<tr>
+<td>Atribuição composta</td>
+<td><code>/=</code></td>
+<td><code>OP_DIV_ASSIGN</code></td>
+</tr>
+<tr>
+<td>Incremento/Decremento</td>
+<td><code>++</code></td>
+<td><code>OP_INC</code></td>
+</tr>
+<tr>
+<td>Incremento/Decremento</td>
+<td><code>--</code></td>
+<td><code>OP_DEC</code></td>
+</tr>
+<tr>
+<td>Ternário</td>
+<td><code>?</code></td>
+<td><code>OP_QUESTION</code></td>
+</tr>
+<tr>
+<td>Ternário</td>
+<td><code>:</code></td>
+<td><code>OP_COLON</code></td>
+</tr>
+</tbody>
+</table>
+<p>Todos os operadores são literais exatos (sem classes de caracteres). Operadores de dois caracteres (<code>==</code>, <code>!=</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>&amp;&amp;</code>, <code>||</code>, <code>++</code>, <code>--</code>, <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>) devem ser reconhecidos antes de seus prefixos de um caractere (<code>=</code>, <code>!</code>, <code>&lt;</code>, <code>&gt;</code>, <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>), para que <code>==</code> não seja lido como dois <code>=</code> separados.</p>
+<h2 id="delimitadores">Delimitadores</h2>
+<table>
+<thead>
+<tr>
+<th>Símbolo</th>
+<th>Token</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(</code></td>
+<td><code>DELIM_LPAREN</code></td>
+</tr>
+<tr>
+<td><code>)</code></td>
+<td><code>DELIM_RPAREN</code></td>
+</tr>
+<tr>
+<td><code>{</code></td>
+<td><code>DELIM_LBRACE</code></td>
+</tr>
+<tr>
+<td><code>}</code></td>
+<td><code>DELIM_RBRACE</code></td>
+</tr>
+<tr>
+<td><code>[</code></td>
+<td><code>DELIM_LBRACKET</code></td>
+</tr>
+<tr>
+<td><code>]</code></td>
+<td><code>DELIM_RBRACKET</code></td>
+</tr>
+<tr>
+<td><code>;</code></td>
+<td><code>DELIM_SEMICOLON</code></td>
+</tr>
+<tr>
+<td><code>,</code></td>
+<td><code>DELIM_COMMA</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="comentarios-e-espacos-em-branco">Comentários e Espaços em Branco</h2>
+<p>Não geram token — são descartados pelo analisador léxico, mas fazem parte da especificação léxica da linguagem.</p>
+<ul>
+<li>Comentário de linha: <code>//.*</code></li>
+<li>Comentário de bloco: inicia com <code>/*</code> e termina com <code>*/</code>, podendo abranger múltiplas linhas (tratado com uma condição de início exclusiva no scanner, não uma única regex linear).</li>
+<li>Espaços em branco: <code>[ \t\r\n]+</code>.</li>
+</ul>
+<h2 id="validacao-das-expressoes-regulares">Validação das Expressões Regulares</h2>
+<p>Critério de aceitação da issue: validar cada regex com exemplos válidos e inválidos (regex101 ou similar). A lista abaixo reúne casos de teste de referência para conferência manual (colar a regex correspondente em regex101.com, flavor PCRE, e testar contra as strings abaixo).</p>
+<h3 id="casos-validos">Casos Válidos</h3>
+<p>Inteiros e floats:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>123
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>0
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>42
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>123.45
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>0.5
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>123.
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>.75
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>1e10
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>1.5e-2
+</code></pre></div>
+<p>Strings com escapes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>"hello"
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>"hello world"
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>"linha\nnova"
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>"tab\ttexto"
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>"aspas: \"hello\""
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>"barra: \\"
+</code></pre></div>
+<p>Caracteres com escapes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>'a'
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>'Z'
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>'1'
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>'\n'
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>'\t'
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>'\\'
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>'\''
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>'\"'
+</code></pre></div>
+<p>Palavras-chave e identificadores em contexto:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">salario_base</span><span class="p">;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">inicial</span><span class="p">;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">salario_base</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="casos-invalidos">Casos Inválidos</h3>
+<p>String não fechada (erro léxico esperado):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">invalido</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"esta string nunca foi fechada</span>
+</code></pre></div>
+<p>Caractere não fechado (erro léxico esperado):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kt">char</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">'</span><span class="n">a</span>
+</code></pre></div>
+<p>Caracteres não reconhecidos pela linguagem (erro léxico esperado):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>@  $  #  `  ~
+</code></pre></div>
+<p>Identificador inválido (não casa com a regex de <code>IDENTIFIER</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>1x
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>sal-ario
+</code></pre></div>
+<h2 id="referencias">Referências</h2>
+<ul>
+<li>Enum canônico de tokens: <code>docs/tokens_reference.h</code></li>
+<li>Implementação do analisador léxico: issue #6 (<code>src/scanner.l</code>)</li>
+<li>Sub-issues desta especificação: #23 (palavras reservadas/identificadores), #24 (literais), #25 (operadores/delimitadores), #26 (validação)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Voltar para o topo
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
