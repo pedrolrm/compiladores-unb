@@ -40,5 +40,6 @@ flowchart LR
 
 Navegue pela documentação técnica através das seções:
 
+- [**Decisões de Projeto**](decisoes.md): Registro das decisões de arquitetura e justificativa detalhada da não implementação de gerenciamento de memória e ponteiros.
 - [**Especificação Léxica (Tokens e Expressões Regulares)**](tokens.md): Tabela de palavras reservadas, operadores, literais e validação das expressões regulares do Flex.
 - [**Gramática Livre de Contexto (GLC)**](gramatica.md): Especificação formal em EBNF de todas as produções sintáticas implementadas no Bison.

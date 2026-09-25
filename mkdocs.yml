@@ -32,6 +32,7 @@ theme:
 
 nav:
   - Início: index.md
+  - Decisões de Projeto: decisoes.md
   - Especificação Léxica: tokens.md
   - Gramática Livre de Contexto (GLC): gramatica.md
 
