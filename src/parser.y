@@ -1,25 +1,357 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "scanner.h"
 
 extern int yylex();
+extern FILE *yyin;
 void yyerror(const char *s);
 %}
 
-/* Declaracao de Tokens */
-%token IDENTIFIER
+/* Habilita o rastreamento automático de linhas e colunas (YYLTYPE) */
+%locations
+
+/* Estrutura para armazenar o valor semântico de um token (yylval) */
+%union {
+    int intval;
+    float floatval;
+    char charval;
+    char *strval;
+}
+
+/* ========================================================================= */
+/* DEFINIÇÃO DE TOKENS (Equivalente ao antigo enum TokenType)                 */
+/* ========================================================================= */
+
+/* Palavras-chave básicas */
+%token KW_INT KW_FLOAT KW_CHAR KW_VOID
+%token KW_IF KW_ELSE KW_WHILE KW_FOR KW_RETURN
+
+/* Controle de fluxo e seleção */
+%token KW_BREAK KW_CONTINUE KW_SWITCH KW_CASE KW_DEFAULT
+
+/* Tipos e modificadores extras */
+%token KW_DOUBLE KW_BOOL KW_LONG KW_SHORT KW_UNSIGNED KW_CONST
+
+/* Estruturas de dados e outros laços */
+%token KW_STRUCT KW_TYPEDEF KW_DO
+
+/* Identificadores e Literais com valores semânticos */
+%token <strval> IDENTIFIER
+%token <intval> INT_LITERAL
+%token <floatval> FLOAT_LITERAL
+%token <strval> STRING_LITERAL
+%token <charval> CHAR_LITERAL
+%token KW_TRUE KW_FALSE
+
+/* Operadores Aritméticos e Lógicos */
+%token OP_PLUS OP_MINUS OP_MULT OP_DIV OP_MOD
+%token OP_ASSIGN OP_EQ OP_NEQ OP_LT OP_LE OP_GT OP_GE
+%token OP_AND OP_OR OP_NOT
+
+/* Operadores de Incremento/Decremento e Atribuição Composta */
+%token OP_INC OP_DEC
+%token OP_PLUS_ASSIGN OP_MINUS_ASSIGN OP_MULT_ASSIGN OP_DIV_ASSIGN
+
+/* Operador Ternário */
+%token OP_QUESTION OP_COLON
+
+/* Delimitadores e Pontuação */
+%token DELIM_LPAREN DELIM_RPAREN
+%token DELIM_LBRACE DELIM_RBRACE
+%token DELIM_LBRACKET DELIM_RBRACKET
+%token DELIM_SEMICOLON DELIM_COMMA
+%token DELIM_DOT                     /* '.' acesso a campo de struct */
+
+/* Token genérico de erro (caso haja caractere inválido) */
+%token TOKEN_ERROR
+
+/* ========================================================================= */
+/* PRECEDÊNCIA E ASSOCIATIVIDADE (menor -> maior precedência)                 */
+/* ========================================================================= */
+%precedence OP_ASSIGN OP_PLUS_ASSIGN OP_MINUS_ASSIGN OP_MULT_ASSIGN OP_DIV_ASSIGN
+%left OP_OR
+%left OP_AND
+%left OP_EQ OP_NEQ
+%left OP_LT OP_LE OP_GT OP_GE
+%left OP_PLUS OP_MINUS
+%left OP_MULT OP_DIV OP_MOD
+%precedence OP_NOT UMINUS      /* operadores unários */
+
+/* Resolução do "dangling else": o KW_ELSE tem precedência maior que um
+   comando if sem else, fazendo o parser preferir shift (else liga ao if
+   mais próximo). */
+%precedence LOWER_THAN_ELSE
+%precedence KW_ELSE
+
+%start program
 
 %%
-/* Gramatica basica (placeholder) */
-program: /* vazio */
-       ;
+/* ========================================================================= */
+/* ESTRUTURA BASE DO PROGRAMA                                                 */
+/* ========================================================================= */
+program
+    : %empty
+    | program statement
+    ;
+
+statement
+    : declaration
+    | function_definition
+    | expression_statement
+    | compound_statement
+    | selection_statement
+    | iteration_statement
+    | labeled_statement
+    | jump_statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Definição de função: tipo de retorno (incl. void), parâmetros e corpo.     */
+/* O prefixo "type_specifier IDENTIFIER" é compartilhado com declaration; a    */
+/* decisão (função vs. declaração) ocorre no token seguinte: '(' vs ','/'='/';'*/
+/* ------------------------------------------------------------------------- */
+function_definition
+    : type_specifier IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement
+    | KW_VOID       IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement
+    ;
+
+parameter_list_opt
+    : %empty
+    | KW_VOID
+    | parameter_list
+    ;
+
+parameter_list
+    : parameter
+    | parameter_list DELIM_COMMA parameter
+    ;
+
+parameter
+    : type_specifier IDENTIFIER
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Bloco de comandos: permite aninhamento arbitrário de escopos.              */
+/* ------------------------------------------------------------------------- */
+compound_statement
+    : DELIM_LBRACE DELIM_RBRACE
+    | DELIM_LBRACE statement_list DELIM_RBRACE
+    ;
+
+statement_list
+    : statement
+    | statement_list statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Seleção: if / if-else (com dangling else) e switch.                        */
+/* ------------------------------------------------------------------------- */
+selection_statement
+    : KW_IF DELIM_LPAREN expression DELIM_RPAREN statement %prec LOWER_THAN_ELSE
+    | KW_IF DELIM_LPAREN expression DELIM_RPAREN statement KW_ELSE statement
+    | KW_SWITCH DELIM_LPAREN expression DELIM_RPAREN statement
+    ;
+
+/* Rótulos do switch (case/default) tratados como labeled statements. */
+labeled_statement
+    : KW_CASE expression OP_COLON statement
+    | KW_DEFAULT OP_COLON statement
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Iteração: while e for (init pode ser declaração ou expressão).             */
+/* ------------------------------------------------------------------------- */
+iteration_statement
+    : KW_WHILE DELIM_LPAREN expression DELIM_RPAREN statement
+    | KW_FOR DELIM_LPAREN for_init expression_opt DELIM_SEMICOLON expression_opt DELIM_RPAREN statement
+    ;
+
+for_init
+    : declaration
+    | expression_statement
+    ;
+
+expression_opt
+    : %empty
+    | expression
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Desvios de fluxo em laços e switch.                                        */
+/* ------------------------------------------------------------------------- */
+jump_statement
+    : KW_BREAK DELIM_SEMICOLON
+    | KW_CONTINUE DELIM_SEMICOLON
+    | KW_RETURN expression_opt DELIM_SEMICOLON
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Declarações de variáveis: int/float/char/bool, com inicialização opcional  */
+/* e múltiplos declaradores separados por vírgula.                            */
+/* ------------------------------------------------------------------------- */
+declaration
+    : type_specifier init_declarator_list DELIM_SEMICOLON
+    | type_specifier DELIM_SEMICOLON          /* ex.: definição de struct sem variável */
+    ;
+
+type_specifier
+    : KW_INT
+    | KW_FLOAT
+    | KW_CHAR
+    | KW_BOOL
+    | struct_specifier
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Struct: definição com campos (struct P { ... }) e uso como tipo (struct P).*/
+/* Os campos reutilizam a regra de declaração (aceitam arrays e outros structs)*/
+/* ------------------------------------------------------------------------- */
+struct_specifier
+    : KW_STRUCT IDENTIFIER DELIM_LBRACE struct_declaration_list DELIM_RBRACE
+    | KW_STRUCT IDENTIFIER
+    ;
+
+struct_declaration_list
+    : declaration
+    | struct_declaration_list declaration
+    ;
+
+init_declarator_list
+    : init_declarator
+    | init_declarator_list DELIM_COMMA init_declarator
+    ;
+
+init_declarator
+    : declarator
+    | declarator OP_ASSIGN expression
+    ;
+
+/* Declarador com dimensões de array opcionais (ex.: v[10], m[3][4], buf[]). */
+declarator
+    : IDENTIFIER
+    | declarator DELIM_LBRACKET expression DELIM_RBRACKET
+    | declarator DELIM_LBRACKET DELIM_RBRACKET
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Comando de expressão (inclui atribuições) e comando vazio.                 */
+/* ------------------------------------------------------------------------- */
+expression_statement
+    : expression DELIM_SEMICOLON
+    | DELIM_SEMICOLON
+    ;
+
+/* ------------------------------------------------------------------------- */
+/* Expressões com precedência de operadores.                                  */
+/* A ambiguidade é resolvida pelas declarações de precedência acima.          */
+/* ------------------------------------------------------------------------- */
+expression
+    : postfix_expression OP_ASSIGN expression
+    | postfix_expression OP_PLUS_ASSIGN expression
+    | postfix_expression OP_MINUS_ASSIGN expression
+    | postfix_expression OP_MULT_ASSIGN expression
+    | postfix_expression OP_DIV_ASSIGN expression
+    | expression OP_OR expression
+    | expression OP_AND expression
+    | expression OP_EQ expression
+    | expression OP_NEQ expression
+    | expression OP_LT expression
+    | expression OP_LE expression
+    | expression OP_GT expression
+    | expression OP_GE expression
+    | expression OP_PLUS expression
+    | expression OP_MINUS expression
+    | expression OP_MULT expression
+    | expression OP_DIV expression
+    | expression OP_MOD expression
+    | OP_MINUS expression %prec UMINUS
+    | OP_NOT expression
+    | DELIM_LPAREN expression DELIM_RPAREN
+    | postfix_expression
+    ;
+
+/* Pós-fixados: indexação de array e acesso a campo de struct, encadeáveis
+   (ex.: a[i].campo, s.v[j], m[i][j], f().campo). */
+postfix_expression
+    : primary_expression
+    | postfix_expression DELIM_LBRACKET expression DELIM_RBRACKET
+    | postfix_expression DELIM_DOT IDENTIFIER
+    ;
+
+primary_expression
+    : IDENTIFIER
+    | IDENTIFIER DELIM_LPAREN argument_list_opt DELIM_RPAREN   /* chamada de função (incl. recursiva) */
+    | INT_LITERAL
+    | FLOAT_LITERAL
+    | CHAR_LITERAL
+    | STRING_LITERAL
+    | KW_TRUE
+    | KW_FALSE
+    ;
+
+/* Lista de argumentos de uma chamada de função. */
+argument_list_opt
+    : %empty
+    | argument_list
+    ;
+
+argument_list
+    : expression
+    | argument_list DELIM_COMMA expression
+    ;
 %%
 
 void yyerror(const char *s) {
-    extern int yylineno;
-    fprintf(stderr, "Erro sintatico na linha %d: %s\n", yylineno, s);
+    /* Utiliza as variáveis yylloc (geradas pelo %locations) para reportar erros com precisão */
+    fprintf(stderr, "Erro sintático na linha %d, coluna %d: %s\n", yylloc.first_line, yylloc.first_column, s);
 }
 
 int main(int argc, char **argv) {
-    return yyparse();
+    int parse_mode = 0;
+    char *filepath = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--parse") == 0 || strcmp(argv[i], "-p") == 0) {
+            parse_mode = 1;
+        } else if (strcmp(argv[i], "--scan") == 0 || strcmp(argv[i], "-s") == 0) {
+            parse_mode = 0;
+        } else if (argv[i][0] != '-') {
+            filepath = argv[i];
+        }
+    }
+
+    FILE *source = stdin;
+
+    if (filepath) {
+        source = fopen(filepath, "r");
+        if (!source) {
+            perror(filepath);
+            return 1;
+        }
+    }
+
+    int status = 0;
+
+    /*
+     * Modo Scanner (padrão via CLI ao passar arquivo .c):
+     * Consome a entrada e imprime a listagem formatada dos tokens gerados.
+     * Caso o usuário passe a flag --parse ou -p, executa a análise sintática do Bison.
+     */
+    if (parse_mode) {
+        yyin = source;
+        status = yyparse();
+        if (status == 0 && lexical_errors_count > 0) {
+            status = 1;
+        }
+    } else {
+        status = run_scanner(source);
+    }
+
+    if (source != stdin) {
+        fclose(source);
+    }
+
+    return status;
 }

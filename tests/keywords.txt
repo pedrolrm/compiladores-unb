@@ -1,0 +1,12 @@
+int main() {
+    float salario_base;
+    char inicial;
+    
+    if (salario_base) {
+        return 1;
+    } else {
+        while (true) {
+            continue;
+        }
+    }
+}
