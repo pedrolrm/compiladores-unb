@@ -30,7 +30,7 @@ flowchart TD
     A --> E["4. Viabilidade do Cronograma"]
 ```
 
-#### 1. Mismatch de Paradigmas de Memória (C $\rightarrow$ Python)
+#### 1. Mismatch de Paradigmas de Memória (C → Python)
 A principal dificuldade reside no abismo conceitual entre o modelo de memória de C e o de Python:
 
 - **Modelo de C:** Memória linear, contígua e exposta diretamente como endereços numéricos em bytes. O programador controla o ciclo de vida de objetos no *stack* (pilha) e no *heap*, operando diretamente sobre ponteiros de memória.
