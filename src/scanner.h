@@ -24,4 +24,20 @@ void report_lexical_error(int line, int col, const char *msg);
  */
 int run_scanner(FILE *source);
 
+/**
+ * Abre o arquivo no caminho especificado e executa o Scanner.
+ * Retorna 0 em caso de sucesso ou 1 se houver erros léxicos ou falha de abertura.
+ */
+int run_scanner_file(const char *filepath);
+
+/**
+ * Executa o Scanner redirecionando a saída formatada para out e erros para err.
+ */
+int run_scanner_output(FILE *source, FILE *out, FILE *err);
+
+/**
+ * Executa o Scanner em filepath gravando a saída em out_path e erros em err_path.
+ */
+int run_scanner_file_to_files(const char *filepath, const char *out_path, const char *err_path);
+
 #endif /* SCANNER_H */

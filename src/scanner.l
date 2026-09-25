@@ -16,6 +16,9 @@ int lexical_errors_count = 0;
     yylloc.last_column = current_column + yyleng - 1; \
     current_column += yyleng;
 
+static FILE *scanner_err_stream = NULL;
+static FILE *scanner_out_stream = NULL;
+
 /*
  * Reporta um erro léxico com mensagem padronizada, exibindo linha e coluna.
  * Não quebra a execução abruptamente.
@@ -23,7 +26,8 @@ int lexical_errors_count = 0;
 void report_lexical_error(int line, int col, const char *msg)
 {
     lexical_errors_count++;
-    fprintf(stderr, "Erro léxico na linha %d, coluna %d: %s\n", line, col, msg);
+    FILE *target = scanner_err_stream ? scanner_err_stream : stderr;
+    fprintf(target, "Erro léxico na linha %d, coluna %d: %s\n", line, col, msg);
 }
 
 /*
@@ -344,58 +348,108 @@ const char *token_to_string(int token)
     }
 }
 
-int run_scanner(FILE *source)
+int run_scanner_output(FILE *source, FILE *out, FILE *err)
 {
-    yyin = source;
+    yyrestart(source);
     current_column = 1;
     yylineno = 1;
+    lexical_errors_count = 0;
+
+    FILE *prev_out = scanner_out_stream;
+    FILE *prev_err = scanner_err_stream;
+    scanner_out_stream = out ? out : stdout;
+    scanner_err_stream = err ? err : stderr;
 
     int token;
     int token_count = 0;
 
-    printf("======================================================================\n");
-    printf("%-8s %-8s %-20s %s\n", "LINHA", "COLUNA", "TOKEN", "LEXEMA");
-    printf("======================================================================\n");
+    fprintf(scanner_out_stream, "======================================================================\n");
+    fprintf(scanner_out_stream, "%-8s %-8s %-20s %s\n", "LINHA", "COLUNA", "TOKEN", "LEXEMA");
+    fprintf(scanner_out_stream, "======================================================================\n");
 
     while ((token = yylex()) != 0) {
         token_count++;
         const char *name = token_to_string(token);
 
         if (token == INT_LITERAL) {
-            printf("%-8d %-8d %-20s '%s' (valor: %d)\n",
-                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.intval);
+            fprintf(scanner_out_stream, "%-8d %-8d %-20s '%s' (valor: %d)\n",
+                    yylloc.first_line, yylloc.first_column, name, yytext, yylval.intval);
         } else if (token == FLOAT_LITERAL) {
-            printf("%-8d %-8d %-20s '%s' (valor: %g)\n",
-                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.floatval);
+            fprintf(scanner_out_stream, "%-8d %-8d %-20s '%s' (valor: %g)\n",
+                    yylloc.first_line, yylloc.first_column, name, yytext, yylval.floatval);
         } else if (token == STRING_LITERAL) {
-            printf("%-8d %-8d %-20s '%s' (valor: \"%s\")\n",
-                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.strval ? yylval.strval : "");
+            fprintf(scanner_out_stream, "%-8d %-8d %-20s '%s' (valor: \"%s\")\n",
+                    yylloc.first_line, yylloc.first_column, name, yytext, yylval.strval ? yylval.strval : "");
             if (yylval.strval) {
                 free(yylval.strval);
                 yylval.strval = NULL;
             }
         } else if (token == CHAR_LITERAL) {
-            printf("%-8d %-8d %-20s '%s' (valor: '%c')\n",
-                   yylloc.first_line, yylloc.first_column, name, yytext, yylval.charval);
+            fprintf(scanner_out_stream, "%-8d %-8d %-20s '%s' (valor: '%c')\n",
+                    yylloc.first_line, yylloc.first_column, name, yytext, yylval.charval);
         } else if (token == IDENTIFIER) {
-            printf("%-8d %-8d %-20s '%s'\n",
-                   yylloc.first_line, yylloc.first_column, name, yytext);
+            fprintf(scanner_out_stream, "%-8d %-8d %-20s '%s'\n",
+                    yylloc.first_line, yylloc.first_column, name, yytext);
             if (yylval.strval) {
                 free(yylval.strval);
                 yylval.strval = NULL;
             }
         } else {
-            printf("%-8d %-8d %-20s '%s'\n",
-                   yylloc.first_line, yylloc.first_column, name, yytext);
+            fprintf(scanner_out_stream, "%-8d %-8d %-20s '%s'\n",
+                    yylloc.first_line, yylloc.first_column, name, yytext);
         }
     }
 
-    printf("======================================================================\n");
-    printf("Total de tokens processados: %d\n", token_count);
+    fprintf(scanner_out_stream, "======================================================================\n");
+    fprintf(scanner_out_stream, "Total de tokens processados: %d\n", token_count);
     if (lexical_errors_count > 0) {
-        printf("Total de erros léxicos encontrados: %d\n", lexical_errors_count);
+        fprintf(scanner_out_stream, "Total de erros léxicos encontrados: %d\n", lexical_errors_count);
     }
-    printf("======================================================================\n");
+    fprintf(scanner_out_stream, "======================================================================\n");
 
-    return (lexical_errors_count > 0) ? 1 : 0;
+    fflush(scanner_out_stream);
+    fflush(scanner_err_stream);
+
+    int has_errors = (lexical_errors_count > 0) ? 1 : 0;
+    scanner_out_stream = prev_out;
+    scanner_err_stream = prev_err;
+
+    return has_errors;
+}
+
+int run_scanner(FILE *source)
+{
+    return run_scanner_output(source, stdout, stderr);
+}
+
+int run_scanner_file(const char *filepath)
+{
+    return run_scanner_file_to_files(filepath, NULL, NULL);
+}
+
+int run_scanner_file_to_files(const char *filepath, const char *out_path, const char *err_path)
+{
+    FILE *source = fopen(filepath, "r");
+    if (!source) {
+        perror(filepath);
+        return 1;
+    }
+
+    FILE *out = out_path ? fopen(out_path, "w") : stdout;
+    FILE *err = err_path ? fopen(err_path, "w") : stderr;
+
+    if (!out || !err) {
+        fclose(source);
+        if (out && out != stdout) fclose(out);
+        if (err && err != stderr) fclose(err);
+        return 1;
+    }
+
+    int status = run_scanner_output(source, out, err);
+
+    fclose(source);
+    if (out != stdout) fclose(out);
+    if (err != stderr) fclose(err);
+
+    return status;
 }
