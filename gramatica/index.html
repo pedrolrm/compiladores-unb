@@ -16,12 +16,14 @@
         <link rel="prev" href="../tokens/">
       
       
+        <link rel="next" href="../ast_e_tabela_simbolos/">
+      
       
         
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -568,6 +570,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ast_e_tabela_simbolos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AST e Tabela de Símbolos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -833,12 +862,8 @@ descreve construções planejadas e ainda não implementadas.</p>
 </tbody>
 </table>
 <blockquote>
-<p><strong>Nota:</strong> o parser declara o token <code>.</code> (<code>DELIM_DOT</code>, usado no acesso a campo
-de struct em <code>postfix_expression</code>), mas o scanner atual
-(<code>src/scanner.l</code>) não possui uma regra que emita esse token — o caractere
-<code>.</code> cai hoje na regra de caractere inválido. Isso é um gap de sincronização
-entre scanner e parser fora do escopo desta issue (documentação da
-gramática), registrado aqui para ciência da equipe.</p>
+<p><strong>Nota:</strong> o token <code>.</code> (<code>DELIM_DOT</code>) é utilizado no acesso a campo de struct em <code>postfix_expression</code>
+e é plenamente reconhecido pelo analisador léxico (<code>src/scanner.l</code>).</p>
 </blockquote>
 <p>As demais palavras-chave lexadas pelo scanner (<code>double</code>, <code>long</code>, <code>short</code>,
 <code>unsigned</code>, <code>const</code>, <code>typedef</code>, <code>do</code>) e os operadores <code>++</code>, <code>--</code>, <code>?</code>, <code>:</code>
@@ -1064,10 +1089,10 @@ tipos adicionais), para não divergir do compilador real.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
       

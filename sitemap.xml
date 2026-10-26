@@ -2,18 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://pedrolrm.github.io/compiladores-unb/</loc>
-         <lastmod>2026-09-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pedrolrm.github.io/compiladores-unb/ast_e_tabela_simbolos/</loc>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://pedrolrm.github.io/compiladores-unb/decisoes/</loc>
-         <lastmod>2026-09-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://pedrolrm.github.io/compiladores-unb/gramatica/</loc>
-         <lastmod>2026-09-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://pedrolrm.github.io/compiladores-unb/tokens/</loc>
-         <lastmod>2026-09-25</lastmod>
+         <lastmod>2026-10-26</lastmod>
     </url>
 </urlset>
