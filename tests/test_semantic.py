@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Suíte de Testes Automatizados para a Tabela de Símbolos e Análise Semântica
-Compiladores - UnB
+Compiladores - UnB (Escopo Simplificado)
 """
 
 import os
@@ -47,11 +47,10 @@ def run_semantic_test(source_code, expect_success, expected_msg=None, test_name=
 
 def run_symbols_output_test():
     test_code = """
-    struct Ponto { int x; int y; };
     int soma(int a, int b) { return a + b; }
     int main() {
-        struct Ponto pt;
         int res = soma(1, 2);
+        float val = 10.5;
         return 0;
     }
     """
@@ -70,7 +69,7 @@ def run_symbols_output_test():
             return False
 
         output = proc.stdout
-        expected = ["Escopo Nível 0", "Ponto", "soma", "main", "pt", "res"]
+        expected = ["Escopo Nível 0", "soma", "main", "res", "val"]
         for exp in expected:
             if exp not in output:
                 print(f"[{RED}FAIL{RESET}] Flag --symbols não exibiu '{exp}':\n{output}")
@@ -91,15 +90,12 @@ def main():
         # Casos válidos
         (
             """
-            struct Ponto { int x; int y; };
             int dobro(int n) { return n * 2; }
             int main() {
                 int a = 10;
                 float b = 20.5;
                 float c = a + b; // coerção int -> float permitida
-                struct Ponto p;
-                p.x = 5;
-                p.y = dobro(p.x);
+                int res = dobro(a);
                 int v[5];
                 v[0] = 1;
                 while (a > 0) {
@@ -112,22 +108,18 @@ def main():
             """,
             True,
             None,
-            "Programa Válido com Funções, Structs, Escopos e Laços"
+            "Programa Válido com Funções, Tipos, Coerções e Laços"
         ),
         (
             """
-            int x = 100;
-            int main() {
-                int x = 10; // shadowing válido
-                {
-                    int x = 1; // shadowing válido em bloco interno
-                }
-                return x;
-            }
+            int g = 100;
+            int f1() { int x = 10; return x + g; }
+            int f2() { int x = 20; return x + g; }
+            int main() { return f1() + f2(); }
             """,
             True,
             None,
-            "Sombreamento de Variáveis (Shadowing) em Escopos Aninhados"
+            "Escopos Independentes em Funções Distintas com Variável Global"
         ),
 
         # Casos de erro semântico
@@ -140,8 +132,33 @@ def main():
         (
             "int main() { int a; int a; }",
             False,
-            "redeclaração da variável 'a'",
+            "redeclaração da variável 'a' no mesmo escopo",
             "Erro: Redeclaração no Mesmo Escopo"
+        ),
+        (
+            """
+            int main() {
+                int x = 10;
+                if (x > 0) {
+                    int x = 20; // Proibido no escopo simplificado
+                }
+            }
+            """,
+            False,
+            "sombreamento não permitido",
+            "Erro: Sombreamento de Variável em Bloco Proibido"
+        ),
+        (
+            """
+            void teste(int p) {
+                if (p > 0) {
+                    int p = 5; // Proibido sombrear parâmetro
+                }
+            }
+            """,
+            False,
+            "sombreamento não permitido",
+            "Erro: Sombreamento de Parâmetro da Função Proibido"
         ),
         (
             "void f(int a, int b) {} int main() { f(10); }",
@@ -152,26 +169,20 @@ def main():
         (
             "int main() { break; }",
             False,
-            "comando 'break' fora de laço",
-            "Erro: 'break' Fora de Laço ou Switch"
+            "comando 'break' fora de laço de repetição",
+            "Erro: 'break' Fora de Laço"
         ),
         (
             "int main() { continue; }",
             False,
-            "comando 'continue' fora de laço",
+            "comando 'continue' fora de laço de repetição",
             "Erro: 'continue' Fora de Laço"
         ),
         (
-            "struct Ponto { int x; }; int main() { struct Ponto p; p.z = 10; }",
+            "void func_vazia() { return 10; }",
             False,
-            "membro 'z' não existe na struct 'Ponto'",
-            "Erro: Acesso a Membro Inexistente na Struct"
-        ),
-        (
-            "int main() { int x = 10; x.campo = 5; }",
-            False,
-            "acesso de membro '.' em identificador que não é struct",
-            "Erro: Acesso de Membro '.' em Tipo Não-Struct"
+            "função com retorno 'void' não deve retornar valor",
+            "Erro: Retorno com Expressão em Função Void"
         ),
         (
             "int main() { int v[10]; v[\"str\"] = 1; }",
