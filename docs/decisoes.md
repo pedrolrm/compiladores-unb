@@ -14,7 +14,7 @@ Este documento registra as principais decisões de arquitetura e escopo tomadas 
 ### Contexto
 O projeto consiste na construção de um compilador cuja linguagem fonte é um subconjunto de **C** e cuja linguagem alvo final é **Python**. Durante a concepção da linguagem e o planejamento das sprints, a equipe avaliou a viabilidade de incluir suporte a ponteiros (`*ptr`, `&var`, `p->campo`), aritmética de ponteiros e gerenciamento dinâmico de memória (`malloc`, `calloc`, `free`).
 
-Após análise técnica detalhada, a equipe deliberou por **não implementar** manipulação direta de ponteiros nem alocação dinâmica de memória no escopo do projeto, restringindo a linguagem a variáveis primitivas, vetores (`arrays`) com tamanho estático e registros heterogêneos (`struct`).
+Após análise técnica detalhada, a equipe deliberou por **não implementar** manipulação direta de ponteiros nem alocação dinâmica de memória no escopo do projeto, restringindo a linguagem a variáveis primitivas e vetores (`arrays`) com tamanho estático.
 
 ---
 
@@ -59,24 +59,45 @@ Lidar com ponteiros sem um sistema avançado de análise de fluxo estático abre
 - Ponteiros soltos (*dangling pointers*) decorrentes de descarte prematuro com `free`.
 - Vazamentos de memória (*memory leaks*).
 
-Garantir diagnósticos úteis em tempo de compilação para esses cenários consumiria semanas de desenvolvimento, comprometendo a entrega das fases essenciais da disciplina (Análise Léxica, Análise Sintática, Análise Semântica da AST e Geração de Código).
+---
+
+## 2. Podagem de Escopo para Viabilidade da Transpilação (Corte de Structs, Switch e Shadowing)
+
+### Status
+**Aprovado e Adotado** (Sprint 3)
 
 ---
 
-### Solução e Alternativas Adotadas
+### Contexto e Motivação
+Com a conclusão do front-end básico e a preparação da etapa de **Geração de Código (Transpilação de AST para Python)** escrita em C puro, a equipe reavaliou a viabilidade técnica de manter construções que introduziam discrepâncias semânticas severas entre C e Python:
 
-Para manter o compilador robusto, seguro e com escopo viável no semestre letivo, optamos pelo seguinte conjunto de restrições:
+1. **`struct` (Registros Heterogêneos):**
+   - Em C, a atribuição `p2 = p1` ou passagem de structs em funções copia todos os campos por valor. Em Python, objetos de classe são referências compartilhadas e mutáveis. Para manter a semântica de cópia de C sem efeitos colaterais silenciosos, o gerador de código precisaria implementar clonagem profunda automática (`copy.copy` ou construtores de cópia) e emitir definições de classe Python antes do programa.
+2. **`switch / case / default`:**
+   - Em C, o `switch` possui comportamento de *fall-through* implícito na ausência de `break`. O Python não possui esse comportamento nativo (nem no `match-case` do Python 3.10). Além disso, um `break` de `switch` em C não é válido como `break` em Python se transpilado para `if/elif/else`. O comando `if/else` já atende com rigor total o requisito didático de seleção condicional.
+3. **Arrays Multidimensionais:**
+   - Gerar alocações de listas aninhadas em Python dinamicamente via C (`[[0]*col for _ in range(lin)]`) eleva a complexidade de manipulação de strings em C sem ganho conceitual adicional em relação a vetores unidimensionais.
+4. **Sombreamento de Variáveis (*Shadowing*):**
+   - C possui escopo de bloco léxico (`{ int x; }`), enquanto Python possui escopo em nível de função. Para contornar essa diferença, o compilador seria obrigado a implementar *Alpha-Renaming* (mangling de identificadores como `x_0`, `x_1`), mantendo tabelas de mapeamento e renomeando nós de expressões na emissão. Proibir o shadowing permite que o gerador de código emita diretamente o nome original de cada variável (`fprintf(out, "%s", node->name)`).
 
-| Recurso | Decisão | Alternativa Implementada |
+---
+
+### Tabela Comparativa de Decisões de Escopo
+
+| Recurso em C | Decisão | Alternativa Implementada no Compilador |
 |---|---|---|
-| **Alocação Dinâmica** (`malloc`/`free`) | Não implementado | Alocação automática/estática na pilha (*stack*) |
-| **Ponteiros** (`*ptr`, `&var`) | Não implementado | Variáveis escalares acessadas diretamente pelo identificador |
-| **Acesso Indireto** (`p->campo`) | Não implementado | Acesso direto a membros via operador ponto (`struct.campo`) |
-| **Estruturas de Dados** | Suportadas | `struct` e vetores (`arrays`) com tamanhos definidos |
-| **Passagem de Parâmetros** | Simplificada | Passagem por valor para tipos primitivos e cópia de estruturas |
+| **Alocação Dinâmica** (`malloc`/`free`) | Não implementado | Alocação automática/estática |
+| **Ponteiros** (`*ptr`, `&var`, `p->campo`) | Não implementado | Variáveis escalares acessadas diretamente pelo identificador |
+| **Estruturas Heterogêneas** (`struct`) | Podado do escopo | Variáveis primitivas e vetores |
+| **Seleção Múltipla** (`switch`) | Podado do escopo | Seleção condicional com `if` e `if-else` |
+| **Arrays Multidimensionais** | Podado do escopo | Vetores unidimensionais estáticos (`int v[N]`) |
+| **Sombreamento de Variáveis** (*Shadowing*) | Proibido no semântico | Nomes de variáveis locais únicos por função |
+| **Passagem de Parâmetros** | Simplificada | Passagem por valor para tipos primitivos e vetores 1D |
+
+---
 
 ### Conclusão e Benefícios
-Essa decisão garantiu que a equipe pudesse:
-1. Construir uma **especificação léxica e sintática rigorosa e sem ambiguidades**, com 100% de testes automatizados aprovados;
-2. Focar na correta modelagem da **Árvore Sintática Abstrata (AST)** e da **Tabela de Símbolos**;
-3. Assegurar que a futura geração de código para **Python** seja limpa, idiomática e mapeie naturalmente as estruturas e funções da linguagem fonte.
+Essa refatoração garantiu que:
+1. O compilador permaneça com **zero vazamentos de memória e 100% de testes automatizados aprovados**;
+2. A Tabela de Símbolos e a AST fiquem diretamente alinhadas à arquitetura do futuro gerador de código (`src/codegen.c`);
+3. A equipe possa implementar o gerador de código manualmente em C de forma limpa, direta e depurável.
