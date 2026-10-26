@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "scanner.h"
+#include "semantic.h"
 
 extern int yylex();
 extern FILE *yyin;
@@ -526,6 +527,8 @@ void yyerror(const char *s) {
 int main(int argc, char **argv) {
     int parse_mode = 0;
     int print_ast = 0;
+    int print_symbols = 0;
+    int check_semantic = 0;
     char *filepath = NULL;
 
     for (int i = 1; i < argc; i++) {
@@ -534,6 +537,13 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[i], "--ast") == 0 || strcmp(argv[i], "-a") == 0) {
             parse_mode = 1;
             print_ast = 1;
+        } else if (strcmp(argv[i], "--symbols") == 0 || strcmp(argv[i], "-t") == 0) {
+            parse_mode = 1;
+            print_symbols = 1;
+            check_semantic = 1;
+        } else if (strcmp(argv[i], "--check") == 0 || strcmp(argv[i], "-c") == 0) {
+            parse_mode = 1;
+            check_semantic = 1;
         } else if (strcmp(argv[i], "--scan") == 0 || strcmp(argv[i], "-s") == 0) {
             parse_mode = 0;
         } else if (argv[i][0] != '-') {
@@ -562,6 +572,22 @@ int main(int argc, char **argv) {
 
         if (status == 0 && print_ast && ast_root) {
             ast_print(ast_root, 0);
+        }
+
+        if (status == 0 && (check_semantic || print_symbols) && ast_root) {
+            Scope *global_scope = NULL;
+            int sem_errors = semantic_analyze(ast_root, &global_scope);
+            if (sem_errors > 0) {
+                status = 1;
+            }
+
+            if (print_symbols && global_scope) {
+                symtab_print(global_scope, 0);
+            }
+
+            if (global_scope) {
+                symtab_free(global_scope);
+            }
         }
 
         if (ast_root) {
