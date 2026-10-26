@@ -60,9 +60,9 @@ typedef struct ASTNode {
 ### 2.2 Categorias de Nós (`ASTNodeType`)
 
 - **Estruturais**: `AST_PROGRAM`, `AST_BLOCK`, `AST_EXPR_STMT`.
-- **Declarações**: `AST_VAR_DECL`, `AST_FUNC_DEF`, `AST_PARAM_DECL`, `AST_STRUCT_DECL`.
-- **Comandos de Controle**: `AST_IF`, `AST_WHILE`, `AST_FOR`, `AST_SWITCH`, `AST_CASE`, `AST_DEFAULT`, `AST_BREAK`, `AST_CONTINUE`, `AST_RETURN`.
-- **Expressões**: `AST_BIN_OP`, `AST_UN_OP`, `AST_ASSIGN`, `AST_CALL`, `AST_ARRAY_ACCESS`, `AST_MEMBER_ACCESS`.
+- **Declarações**: `AST_VAR_DECL`, `AST_FUNC_DEF`, `AST_PARAM_DECL`.
+- **Comandos de Controle**: `AST_IF`, `AST_WHILE`, `AST_FOR`, `AST_BREAK`, `AST_CONTINUE`, `AST_RETURN`.
+- **Expressões**: `AST_BIN_OP`, `AST_UN_OP`, `AST_ASSIGN`, `AST_CALL`, `AST_ARRAY_ACCESS`.
 - **Literais / Folhas**: `AST_IDENTIFIER`, `AST_LIT_INT`, `AST_LIT_FLOAT`, `AST_LIT_CHAR`, `AST_LIT_STRING`, `AST_LIT_BOOL`.
 
 ### 2.3 Integração com o Bison
@@ -107,8 +107,7 @@ typedef struct Scope {
 ### 3.2 Resolução Léxica de Símbolos
 
 - **`symtab_lookup_local(scope, name)`**: Busca **apenas** no escopo corrente. Utilizado para detectar redeclarações inválidas no mesmo nível.
-- **`symtab_lookup(scope, name)`**: Busca no escopo corrente e, se não encontrar, sobe recursivamente para os escopos pais até o escopo global. Permite sombreamento (*shadowing*) de variáveis sem conflito.
-- **`symtab_lookup_member(struct_scope, member)`**: Busca um membro dentro do namespace particular de uma struct.
+- **`symtab_lookup(scope, name)`**: Busca no escopo corrente e, se não encontrar, sobe recursivamente para os escopos pais até o escopo global. No escopo simplificado, o analisador semântico proíbe sombreamento (*shadowing*) dentro da mesma função para garantir transpilação direta para Python.
 
 ---
 
@@ -117,21 +116,20 @@ typedef struct Scope {
 A análise semântica é realizada em duas passadas sobre a AST:
 
 1. **Passo 1 (Coleta de Declarações Globais)**:
-   - Registra no escopo global todas as structs e assinaturas de funções.
-   - Permite que funções se chamem livremente e que structs sejam referenciadas em tipos de retorno ou parâmetros.
+   - Registra no escopo global todas as assinaturas de funções.
+   - Permite que funções se chamem mutuamente em qualquer ordem de definição.
 
 2. **Passo 2 (Verificação Completa de Escopos e Tipos)**:
-   - **Resolução de Identificadores**: Garante que variáveis, funções e membros acessados foram previamente declarados.
-   - **Checagem de Redeclarações**: Impede a declaração duplicada de variáveis ou parâmetros no mesmo escopo.
+   - **Resolução de Identificadores**: Garante que variáveis e funções acessadas foram previamente declaradas.
+   - **Checagem de Redeclarações e Shadowing**: Impede declaração duplicada no mesmo escopo e bloqueia sombreamento de variáveis dentro da mesma função.
    - **Sistema de Tipos e Coerção**:
      - Tipos idênticos são aceitos diretamente.
      - Permite promoção implícita de `int` para `float` em atribuições e operações aritméticas mistas.
      - Expressões relacionais e lógicas resultam estritamente no tipo `bool`.
    - **Chamadas de Função**: Confere aridade (quantidade de argumentos) e tipos dos argumentos em relação aos parâmetros formais.
-   - **Acesso a Structs**: Valida se a base da operação `.` é uma struct e se o membro existe em sua definição.
    - **Arrays**: Valida se a base da indexação `[]` é um vetor e se o índice é do tipo inteiro.
    - **Desvios de Fluxo**:
-     - `break`: permitido apenas dentro de laços de repetição (`while`, `for`) ou `switch`.
+     - `break`: permitido apenas dentro de laços de repetição (`while`, `for`).
      - `continue`: permitido apenas dentro de laços de repetição.
      - `return`: confere se o valor retornado é compatível com o tipo de retorno da função corrente (e rejeita retornos com valor em funções `void`).
 
@@ -208,10 +206,10 @@ O projeto conta com suítes de testes automatizadas em Python cobrindo todos os 
 
 - **Testes Léxicos**: `tests/run_tests.py` (11 testes)
 - **Testes da AST**: `tests/test_ast.py` (6 testes)
-- **Testes Semânticos**: `tests/test_semantic.py` (12 testes)
+- **Testes Semânticos**: `tests/test_semantic.py` (13 testes)
 
 Para rodar toda a bateria de testes:
 ```bash
 make test
 ```
-Resultando em 29 testes aprovados (100% de sucesso).
+Resultando em 30 testes aprovados (100% de sucesso).
