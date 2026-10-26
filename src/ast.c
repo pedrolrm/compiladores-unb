@@ -1,7 +1,35 @@
 #include "ast.h"
+#include "parser.tab.h"
 #include <string.h>
 
 ASTNode *ast_root = NULL;
+
+static const char *ast_op_to_string(int op) {
+    switch (op) {
+        case OP_PLUS:         return "+";
+        case OP_MINUS:        return "-";
+        case OP_MULT:         return "*";
+        case OP_DIV:          return "/";
+        case OP_MOD:          return "%";
+        case OP_ASSIGN:       return "=";
+        case OP_PLUS_ASSIGN:  return "+=";
+        case OP_MINUS_ASSIGN: return "-=";
+        case OP_MULT_ASSIGN:  return "*=";
+        case OP_DIV_ASSIGN:   return "/=";
+        case OP_EQ:           return "==";
+        case OP_NEQ:          return "!=";
+        case OP_LT:           return "<";
+        case OP_LE:           return "<=";
+        case OP_GT:           return ">";
+        case OP_GE:           return ">=";
+        case OP_AND:          return "&&";
+        case OP_OR:           return "||";
+        case OP_NOT:          return "!";
+        case OP_INC:          return "++";
+        case OP_DEC:          return "--";
+        default:              return "?";
+    }
+}
 
 /*
  * Construtores e Utilitários de DataType
@@ -452,16 +480,16 @@ void ast_print(const ASTNode *node, int indent) {
                 if (node->left) ast_print(node->left, indent + 1);
                 break;
             case AST_BIN_OP:
-                printf("BinOp (op: %d)\n", node->op);
+                printf("BinOp: %s\n", ast_op_to_string(node->op));
                 if (node->left) ast_print(node->left, indent + 1);
                 if (node->right) ast_print(node->right, indent + 1);
                 break;
             case AST_UN_OP:
-                printf("UnOp (op: %d)\n", node->op);
+                printf("UnOp: %s\n", ast_op_to_string(node->op));
                 if (node->left) ast_print(node->left, indent + 1);
                 break;
             case AST_ASSIGN:
-                printf("Assign (op: %d)\n", node->op);
+                printf("Assign: %s\n", ast_op_to_string(node->op));
                 if (node->left) ast_print(node->left, indent + 1);
                 if (node->right) ast_print(node->right, indent + 1);
                 break;
