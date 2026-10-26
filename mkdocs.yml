@@ -35,6 +35,7 @@ nav:
   - Decisões de Projeto: decisoes.md
   - Especificação Léxica: tokens.md
   - Gramática Livre de Contexto (GLC): gramatica.md
+  - AST e Tabela de Símbolos: ast_e_tabela_simbolos.md
 
 extra_javascript:
   - https://unpkg.com/mermaid@10/dist/mermaid.min.js

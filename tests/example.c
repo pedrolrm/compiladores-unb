@@ -2,7 +2,7 @@
 int main() {
     float salario = 1250.50;
     char letra = 'A';
-    char *mensagem = "Olá, Compiladores!";
+    char mensagem[] = "Olá, Compiladores!";
     
     if (salario > 1000.0) {
         salario += 150.0;

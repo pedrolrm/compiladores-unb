@@ -28,12 +28,8 @@ descreve construções planejadas e ainda não implementadas.
 | Atribuição | `=`, `+=`, `-=`, `*=`, `/=` |
 | Delimitadores | `(`, `)`, `{`, `}`, `[`, `]`, `;`, `,`, `.` |
 
-> **Nota:** o parser declara o token `.` (`DELIM_DOT`, usado no acesso a campo
-> de struct em `postfix_expression`), mas o scanner atual
-> (`src/scanner.l`) não possui uma regra que emita esse token — o caractere
-> `.` cai hoje na regra de caractere inválido. Isso é um gap de sincronização
-> entre scanner e parser fora do escopo desta issue (documentação da
-> gramática), registrado aqui para ciência da equipe.
+> **Nota:** o token `.` (`DELIM_DOT`) é utilizado no acesso a campo de struct em `postfix_expression`
+> e é plenamente reconhecido pelo analisador léxico (`src/scanner.l`).
 
 As demais palavras-chave lexadas pelo scanner (`double`, `long`, `short`,
 `unsigned`, `const`, `typedef`, `do`) e os operadores `++`, `--`, `?`, `:`

@@ -18,8 +18,8 @@ int for_each = 4;
 int _underscore_identifier_123 = 5;
 
 // 3. String vazia e escapes
-char *s1 = "";
-char *s2 = "linha 1\nlinha 2\ttabulado\\barra\"aspas\"";
+char s1[] = "";
+char s2[] = "linha 1\nlinha 2\ttabulado\\barra\"aspas\"";
 
 // 4. Caracteres especiais e escapes
 char c1 = '\n';
