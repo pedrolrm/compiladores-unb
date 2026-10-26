@@ -37,16 +37,6 @@ static const char *ast_op_to_string(int op) {
 DataType data_type_primitive(BaseType base) {
     DataType dt;
     dt.base = base;
-    dt.struct_name = NULL;
-    dt.is_array = false;
-    dt.array_size = 0;
-    return dt;
-}
-
-DataType data_type_struct(const char *struct_name) {
-    DataType dt;
-    dt.base = TYPE_STRUCT;
-    dt.struct_name = struct_name ? strdup(struct_name) : NULL;
     dt.is_array = false;
     dt.array_size = 0;
     return dt;
@@ -65,7 +55,6 @@ const char *base_type_to_string(BaseType base) {
         case TYPE_FLOAT:  return "float";
         case TYPE_CHAR:   return "char";
         case TYPE_BOOL:   return "bool";
-        case TYPE_STRUCT: return "struct";
         default:          return "unknown";
     }
 }
@@ -74,25 +63,14 @@ const char *data_type_to_string(const DataType *dt) {
     static char buffer[128];
     if (!dt) return "null";
 
-    if (dt->base == TYPE_STRUCT) {
-        if (dt->is_array) {
-            if (dt->array_size > 0)
-                snprintf(buffer, sizeof(buffer), "struct %s[%d]", dt->struct_name ? dt->struct_name : "?", dt->array_size);
-            else
-                snprintf(buffer, sizeof(buffer), "struct %s[]", dt->struct_name ? dt->struct_name : "?");
-        } else {
-            snprintf(buffer, sizeof(buffer), "struct %s", dt->struct_name ? dt->struct_name : "?");
-        }
+    const char *base_str = base_type_to_string(dt->base);
+    if (dt->is_array) {
+        if (dt->array_size > 0)
+            snprintf(buffer, sizeof(buffer), "%s[%d]", base_str, dt->array_size);
+        else
+            snprintf(buffer, sizeof(buffer), "%s[]", base_str);
     } else {
-        const char *base_str = base_type_to_string(dt->base);
-        if (dt->is_array) {
-            if (dt->array_size > 0)
-                snprintf(buffer, sizeof(buffer), "%s[%d]", base_str, dt->array_size);
-            else
-                snprintf(buffer, sizeof(buffer), "%s[]", base_str);
-        } else {
-            snprintf(buffer, sizeof(buffer), "%s", base_str);
-        }
+        snprintf(buffer, sizeof(buffer), "%s", base_str);
     }
     return buffer;
 }
@@ -101,10 +79,6 @@ bool data_type_equals(const DataType *a, const DataType *b) {
     if (!a || !b) return false;
     if (a->base != b->base) return false;
     if (a->is_array != b->is_array) return false;
-    if (a->base == TYPE_STRUCT) {
-        if (!a->struct_name || !b->struct_name) return false;
-        if (strcmp(a->struct_name, b->struct_name) != 0) return false;
-    }
     return true;
 }
 
@@ -157,14 +131,6 @@ ASTNode *ast_create_param(DataType dt, const char *name, int line, int col) {
     return node;
 }
 
-ASTNode *ast_create_struct_decl(const char *name, ASTNode *members, int line, int col) {
-    ASTNode *node = ast_create_node(AST_STRUCT_DECL, line, col);
-    node->data_type = data_type_struct(name);
-    node->name = name ? strdup(name) : NULL;
-    node->left = members;
-    return node;
-}
-
 ASTNode *ast_create_block(ASTNode *statements, int line, int col) {
     ASTNode *node = ast_create_node(AST_BLOCK, line, col);
     node->left = statements;
@@ -197,33 +163,11 @@ ASTNode *ast_create_for(ASTNode *init, ASTNode *cond, ASTNode *step, ASTNode *bo
     node->left = init;
     node->right = cond;
     node->extra = step;
-    /* Encadeia o corpo como proximo no extra ou usa um nó intermediário.
-       Para simplicidade: next de extra armazena body */
     if (step) {
         step->next = body;
     } else {
         node->extra = body;
     }
-    return node;
-}
-
-ASTNode *ast_create_switch(ASTNode *expr, ASTNode *body, int line, int col) {
-    ASTNode *node = ast_create_node(AST_SWITCH, line, col);
-    node->left = expr;
-    node->right = body;
-    return node;
-}
-
-ASTNode *ast_create_case(ASTNode *expr, ASTNode *stmt, int line, int col) {
-    ASTNode *node = ast_create_node(AST_CASE, line, col);
-    node->left = expr;
-    node->right = stmt;
-    return node;
-}
-
-ASTNode *ast_create_default(ASTNode *stmt, int line, int col) {
-    ASTNode *node = ast_create_node(AST_DEFAULT, line, col);
-    node->right = stmt;
     return node;
 }
 
@@ -275,13 +219,6 @@ ASTNode *ast_create_array_access(ASTNode *array, ASTNode *index, int line, int c
     ASTNode *node = ast_create_node(AST_ARRAY_ACCESS, line, col);
     node->left = array;
     node->right = index;
-    return node;
-}
-
-ASTNode *ast_create_member_access(ASTNode *object, const char *member, int line, int col) {
-    ASTNode *node = ast_create_node(AST_MEMBER_ACCESS, line, col);
-    node->left = object;
-    node->name = member ? strdup(member) : NULL;
     return node;
 }
 
@@ -350,7 +287,6 @@ void ast_free(ASTNode *node) {
 
         if (node->name) free(node->name);
         if (node->str_val) free(node->str_val);
-        if (node->data_type.struct_name) free(node->data_type.struct_name);
 
         free(node);
         node = next;
@@ -358,7 +294,7 @@ void ast_free(ASTNode *node) {
 }
 
 /*
- * Visualização e impressão da AST (implementação preliminar/base)
+ * Visualização e impressão da AST
  */
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
@@ -397,14 +333,6 @@ void ast_print(const ASTNode *node, int indent) {
                 break;
             case AST_PARAM_DECL:
                 printf("Param: %s (Type: %s)\n", node->name ? node->name : "?", data_type_to_string(&node->data_type));
-                break;
-            case AST_STRUCT_DECL:
-                printf("StructDecl: %s\n", node->name ? node->name : "?");
-                if (node->left) {
-                    print_indent(indent + 1);
-                    printf("Members:\n");
-                    ast_print(node->left, indent + 2);
-                }
                 break;
             case AST_BLOCK:
                 printf("Block\n");
@@ -455,20 +383,6 @@ void ast_print(const ASTNode *node, int indent) {
                     ast_print(node->extra, indent + 2);
                 }
                 break;
-            case AST_SWITCH:
-                printf("Switch\n");
-                if (node->left) ast_print(node->left, indent + 1);
-                if (node->right) ast_print(node->right, indent + 1);
-                break;
-            case AST_CASE:
-                printf("Case\n");
-                if (node->left) ast_print(node->left, indent + 1);
-                if (node->right) ast_print(node->right, indent + 1);
-                break;
-            case AST_DEFAULT:
-                printf("Default\n");
-                if (node->right) ast_print(node->right, indent + 1);
-                break;
             case AST_BREAK:
                 printf("Break\n");
                 break;
@@ -509,10 +423,6 @@ void ast_print(const ASTNode *node, int indent) {
                 print_indent(indent + 1);
                 printf("Index:\n");
                 ast_print(node->right, indent + 2);
-                break;
-            case AST_MEMBER_ACCESS:
-                printf("MemberAccess (.%s)\n", node->name ? node->name : "?");
-                if (node->left) ast_print(node->left, indent + 1);
                 break;
             case AST_IDENTIFIER:
                 printf("Identifier: %s\n", node->name ? node->name : "?");
