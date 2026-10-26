@@ -259,6 +259,7 @@ ESCAPE      \\([ntrbfv\\'\"0])
 "]"                 { return DELIM_RBRACKET; }
 ";"                 { return DELIM_SEMICOLON; }
 ","                 { return DELIM_COMMA; }
+"."                 { return DELIM_DOT; }
 
     /* Caracteres inválidos / desconhecidos */
 .                   { 
@@ -343,6 +344,7 @@ const char *token_to_string(int token)
         case DELIM_RBRACKET:    return "DELIM_RBRACKET";
         case DELIM_SEMICOLON:   return "DELIM_SEMICOLON";
         case DELIM_COMMA:       return "DELIM_COMMA";
+        case DELIM_DOT:         return "DELIM_DOT";
 
         default:                return "UNKNOWN_TOKEN";
     }

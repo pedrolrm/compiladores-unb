@@ -23,22 +23,26 @@ Para compilar e executar o projeto localmente, você precisará de:
 - Um compilador C (como `gcc` ou `clang`).
 - Utilitário `make` (se utilizarmos Makefile futuramente).
 
-### Passo a Passo (Compilação Manual)
+### Passo a Passo
 
-Como o projeto está nas fases iniciais e o Makefile definitivo ainda será configurado, você pode compilar os arquivos fonte diretamente utilizando o GCC na pasta `src/`:
-
-1. Clone o repositório:
+1. Compile o projeto utilizando o Makefile:
    ```bash
-   git clone https://github.com/pedrolrm/compiladores-unb.git
-   cd compiladores-unb
+   make
    ```
 
-2. Compile os arquivos C localizados na pasta fonte:
+2. Execute o compilador com uma das opções disponíveis:
    ```bash
-   gcc src/*.c -o compilador
+   ./compilador [opções] <arquivo.c>
    ```
 
-3. Execute o programa gerado:
+   **Opções disponíveis:**
+   - `--scan` (`-s`): Executa o Scanner e exibe a lista formatada de tokens.
+   - `--parse` (`-p`): Executa o Parser e valida a sintaxe.
+   - `--ast` (`-a`): Exibe a Árvore Sintática Abstrata (AST) formatada.
+   - `--symbols` (`-t`): Exibe a Tabela de Símbolos hierárquica por escopos.
+   - `--check` (`-c`): Executa a validação sintática e semântica completa.
+
+3. Para executar as suítes de testes automatizados:
    ```bash
-   ./compilador
+   make test
    ```
