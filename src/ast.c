@@ -1,6 +1,8 @@
 #include "ast.h"
 #include <string.h>
 
+ASTNode *ast_root = NULL;
+
 /*
  * Construtores e Utilitários de DataType
  */

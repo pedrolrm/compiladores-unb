@@ -9,19 +9,31 @@ extern FILE *yyin;
 void yyerror(const char *s);
 %}
 
+%code requires {
+#include "ast.h"
+
+/* Estrutura intermediária para especificadores de tipo */
+typedef struct {
+    DataType dt;
+    ASTNode *struct_decl;
+} TypeSpec;
+}
+
 /* Habilita o rastreamento automático de linhas e colunas (YYLTYPE) */
 %locations
 
-/* Estrutura para armazenar o valor semântico de um token (yylval) */
+/* Estrutura para armazenar o valor semântico de um token ou nó (yylval) */
 %union {
     int intval;
     float floatval;
     char charval;
     char *strval;
+    ASTNode *node;
+    TypeSpec typespec;
 }
 
 /* ========================================================================= */
-/* DEFINIÇÃO DE TOKENS (Equivalente ao antigo enum TokenType)                 */
+/* DEFINIÇÃO DE TOKENS                                                       */
 /* ========================================================================= */
 
 /* Palavras-chave básicas */
@@ -68,6 +80,20 @@ void yyerror(const char *s);
 %token TOKEN_ERROR
 
 /* ========================================================================= */
+/* TIPOS DOS NÃO-TERMINAIS                                                   */
+/* ========================================================================= */
+%type <node> program statement function_definition
+%type <node> parameter_list_opt parameter_list parameter
+%type <node> compound_statement statement_list
+%type <node> selection_statement labeled_statement
+%type <node> iteration_statement for_init expression_opt
+%type <node> jump_statement declaration struct_declaration_list
+%type <node> init_declarator_list init_declarator declarator
+%type <node> expression_statement expression postfix_expression primary_expression
+%type <node> argument_list_opt argument_list
+%type <typespec> type_specifier struct_specifier
+
+/* ========================================================================= */
 /* PRECEDÊNCIA E ASSOCIATIVIDADE (menor -> maior precedência)                 */
 /* ========================================================================= */
 %precedence OP_ASSIGN OP_PLUS_ASSIGN OP_MINUS_ASSIGN OP_MULT_ASSIGN OP_DIV_ASSIGN
@@ -79,9 +105,7 @@ void yyerror(const char *s);
 %left OP_MULT OP_DIV OP_MOD
 %precedence OP_NOT UMINUS      /* operadores unários */
 
-/* Resolução do "dangling else": o KW_ELSE tem precedência maior que um
-   comando if sem else, fazendo o parser preferir shift (else liga ao if
-   mais próximo). */
+/* Resolução do "dangling else" */
 %precedence LOWER_THAN_ELSE
 %precedence KW_ELSE
 
@@ -92,214 +116,405 @@ void yyerror(const char *s);
 /* ESTRUTURA BASE DO PROGRAMA                                                 */
 /* ========================================================================= */
 program
-    : %empty
-    | program statement
+    : %empty {
+        $$ = NULL;
+        ast_root = NULL;
+    }
+    | program statement {
+        if ($2) {
+            $$ = ast_append_sibling($1, $2);
+        } else {
+            $$ = $1;
+        }
+        ast_root = $$;
+    }
     ;
 
 statement
-    : declaration
-    | function_definition
-    | expression_statement
-    | compound_statement
-    | selection_statement
-    | iteration_statement
-    | labeled_statement
-    | jump_statement
+    : declaration           { $$ = $1; }
+    | function_definition  { $$ = $1; }
+    | expression_statement { $$ = $1; }
+    | compound_statement   { $$ = $1; }
+    | selection_statement  { $$ = $1; }
+    | iteration_statement  { $$ = $1; }
+    | labeled_statement    { $$ = $1; }
+    | jump_statement       { $$ = $1; }
     ;
 
 /* ------------------------------------------------------------------------- */
 /* Definição de função: tipo de retorno (incl. void), parâmetros e corpo.     */
-/* O prefixo "type_specifier IDENTIFIER" é compartilhado com declaration; a    */
-/* decisão (função vs. declaração) ocorre no token seguinte: '(' vs ','/'='/';'*/
 /* ------------------------------------------------------------------------- */
 function_definition
-    : type_specifier IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement
-    | KW_VOID       IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement
+    : type_specifier IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement {
+        $$ = ast_create_func_def($1.dt, $2, $4, $6, @2.first_line, @2.first_column);
+        free($2);
+    }
+    | KW_VOID IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement {
+        $$ = ast_create_func_def(data_type_primitive(TYPE_VOID), $2, $4, $6, @2.first_line, @2.first_column);
+        free($2);
+    }
     ;
 
 parameter_list_opt
-    : %empty
-    | KW_VOID
-    | parameter_list
+    : %empty        { $$ = NULL; }
+    | KW_VOID       { $$ = NULL; }
+    | parameter_list { $$ = $1; }
     ;
 
 parameter_list
-    : parameter
-    | parameter_list DELIM_COMMA parameter
+    : parameter { $$ = $1; }
+    | parameter_list DELIM_COMMA parameter {
+        $$ = ast_append_sibling($1, $3);
+    }
     ;
 
 parameter
-    : type_specifier IDENTIFIER
+    : type_specifier IDENTIFIER {
+        $$ = ast_create_param($1.dt, $2, @2.first_line, @2.first_column);
+        free($2);
+    }
     ;
 
 /* ------------------------------------------------------------------------- */
 /* Bloco de comandos: permite aninhamento arbitrário de escopos.              */
 /* ------------------------------------------------------------------------- */
 compound_statement
-    : DELIM_LBRACE DELIM_RBRACE
-    | DELIM_LBRACE statement_list DELIM_RBRACE
+    : DELIM_LBRACE DELIM_RBRACE {
+        $$ = ast_create_block(NULL, @1.first_line, @1.first_column);
+    }
+    | DELIM_LBRACE statement_list DELIM_RBRACE {
+        $$ = ast_create_block($2, @1.first_line, @1.first_column);
+    }
     ;
 
 statement_list
-    : statement
-    | statement_list statement
+    : statement { $$ = $1; }
+    | statement_list statement {
+        if ($2) {
+            $$ = ast_append_sibling($1, $2);
+        } else {
+            $$ = $1;
+        }
+    }
     ;
 
 /* ------------------------------------------------------------------------- */
 /* Seleção: if / if-else (com dangling else) e switch.                        */
 /* ------------------------------------------------------------------------- */
 selection_statement
-    : KW_IF DELIM_LPAREN expression DELIM_RPAREN statement %prec LOWER_THAN_ELSE
-    | KW_IF DELIM_LPAREN expression DELIM_RPAREN statement KW_ELSE statement
-    | KW_SWITCH DELIM_LPAREN expression DELIM_RPAREN statement
+    : KW_IF DELIM_LPAREN expression DELIM_RPAREN statement %prec LOWER_THAN_ELSE {
+        $$ = ast_create_if($3, $5, NULL, @1.first_line, @1.first_column);
+    }
+    | KW_IF DELIM_LPAREN expression DELIM_RPAREN statement KW_ELSE statement {
+        $$ = ast_create_if($3, $5, $7, @1.first_line, @1.first_column);
+    }
+    | KW_SWITCH DELIM_LPAREN expression DELIM_RPAREN statement {
+        $$ = ast_create_switch($3, $5, @1.first_line, @1.first_column);
+    }
     ;
 
 /* Rótulos do switch (case/default) tratados como labeled statements. */
 labeled_statement
-    : KW_CASE expression OP_COLON statement
-    | KW_DEFAULT OP_COLON statement
+    : KW_CASE expression OP_COLON statement {
+        $$ = ast_create_case($2, $4, @1.first_line, @1.first_column);
+    }
+    | KW_DEFAULT OP_COLON statement {
+        $$ = ast_create_default($3, @1.first_line, @1.first_column);
+    }
     ;
 
 /* ------------------------------------------------------------------------- */
 /* Iteração: while e for (init pode ser declaração ou expressão).             */
 /* ------------------------------------------------------------------------- */
 iteration_statement
-    : KW_WHILE DELIM_LPAREN expression DELIM_RPAREN statement
-    | KW_FOR DELIM_LPAREN for_init expression_opt DELIM_SEMICOLON expression_opt DELIM_RPAREN statement
+    : KW_WHILE DELIM_LPAREN expression DELIM_RPAREN statement {
+        $$ = ast_create_while($3, $5, @1.first_line, @1.first_column);
+    }
+    | KW_FOR DELIM_LPAREN for_init expression_opt DELIM_SEMICOLON expression_opt DELIM_RPAREN statement {
+        $$ = ast_create_for($3, $4, $6, $8, @1.first_line, @1.first_column);
+    }
     ;
 
 for_init
-    : declaration
-    | expression_statement
+    : declaration          { $$ = $1; }
+    | expression_statement { $$ = $1; }
     ;
 
 expression_opt
-    : %empty
-    | expression
+    : %empty     { $$ = NULL; }
+    | expression { $$ = $1; }
     ;
 
 /* ------------------------------------------------------------------------- */
 /* Desvios de fluxo em laços e switch.                                        */
 /* ------------------------------------------------------------------------- */
 jump_statement
-    : KW_BREAK DELIM_SEMICOLON
-    | KW_CONTINUE DELIM_SEMICOLON
-    | KW_RETURN expression_opt DELIM_SEMICOLON
+    : KW_BREAK DELIM_SEMICOLON {
+        $$ = ast_create_break(@1.first_line, @1.first_column);
+    }
+    | KW_CONTINUE DELIM_SEMICOLON {
+        $$ = ast_create_continue(@1.first_line, @1.first_column);
+    }
+    | KW_RETURN expression_opt DELIM_SEMICOLON {
+        $$ = ast_create_return($2, @1.first_line, @1.first_column);
+    }
     ;
 
 /* ------------------------------------------------------------------------- */
-/* Declarações de variáveis: int/float/char/bool, com inicialização opcional  */
-/* e múltiplos declaradores separados por vírgula.                            */
+/* Declarações de variáveis e structs                                         */
 /* ------------------------------------------------------------------------- */
 declaration
-    : type_specifier init_declarator_list DELIM_SEMICOLON
-    | type_specifier DELIM_SEMICOLON          /* ex.: definição de struct sem variável */
+    : type_specifier init_declarator_list DELIM_SEMICOLON {
+        ASTNode *curr = $2;
+        while (curr) {
+            curr->data_type.base = $1.dt.base;
+            if ($1.dt.base == TYPE_STRUCT && $1.dt.struct_name) {
+                curr->data_type.struct_name = strdup($1.dt.struct_name);
+            }
+            curr = curr->next;
+        }
+        if ($1.struct_decl) {
+            $$ = ast_append_sibling($1.struct_decl, $2);
+        } else {
+            $$ = $2;
+        }
+    }
+    | type_specifier DELIM_SEMICOLON {
+        if ($1.struct_decl) {
+            $$ = $1.struct_decl;
+        } else {
+            $$ = NULL;
+        }
+    }
     ;
 
 type_specifier
-    : KW_INT
-    | KW_FLOAT
-    | KW_CHAR
-    | KW_BOOL
-    | struct_specifier
+    : KW_INT {
+        TypeSpec ts;
+        ts.dt = data_type_primitive(TYPE_INT);
+        ts.struct_decl = NULL;
+        $$ = ts;
+    }
+    | KW_FLOAT {
+        TypeSpec ts;
+        ts.dt = data_type_primitive(TYPE_FLOAT);
+        ts.struct_decl = NULL;
+        $$ = ts;
+    }
+    | KW_CHAR {
+        TypeSpec ts;
+        ts.dt = data_type_primitive(TYPE_CHAR);
+        ts.struct_decl = NULL;
+        $$ = ts;
+    }
+    | KW_BOOL {
+        TypeSpec ts;
+        ts.dt = data_type_primitive(TYPE_BOOL);
+        ts.struct_decl = NULL;
+        $$ = ts;
+    }
+    | struct_specifier {
+        $$ = $1;
+    }
     ;
 
-/* ------------------------------------------------------------------------- */
-/* Struct: definição com campos (struct P { ... }) e uso como tipo (struct P).*/
-/* Os campos reutilizam a regra de declaração (aceitam arrays e outros structs)*/
-/* ------------------------------------------------------------------------- */
 struct_specifier
-    : KW_STRUCT IDENTIFIER DELIM_LBRACE struct_declaration_list DELIM_RBRACE
-    | KW_STRUCT IDENTIFIER
+    : KW_STRUCT IDENTIFIER DELIM_LBRACE struct_declaration_list DELIM_RBRACE {
+        TypeSpec ts;
+        ts.dt = data_type_struct($2);
+        ts.struct_decl = ast_create_struct_decl($2, $4, @1.first_line, @1.first_column);
+        free($2);
+        $$ = ts;
+    }
+    | KW_STRUCT IDENTIFIER {
+        TypeSpec ts;
+        ts.dt = data_type_struct($2);
+        ts.struct_decl = NULL;
+        free($2);
+        $$ = ts;
+    }
     ;
 
 struct_declaration_list
-    : declaration
-    | struct_declaration_list declaration
+    : declaration { $$ = $1; }
+    | struct_declaration_list declaration {
+        if ($2) {
+            $$ = ast_append_sibling($1, $2);
+        } else {
+            $$ = $1;
+        }
+    }
     ;
 
 init_declarator_list
-    : init_declarator
-    | init_declarator_list DELIM_COMMA init_declarator
+    : init_declarator { $$ = $1; }
+    | init_declarator_list DELIM_COMMA init_declarator {
+        $$ = ast_append_sibling($1, $3);
+    }
     ;
 
 init_declarator
-    : declarator
-    | declarator OP_ASSIGN expression
+    : declarator { $$ = $1; }
+    | declarator OP_ASSIGN expression {
+        $1->left = $3;
+        $$ = $1;
+    }
     ;
 
 /* Declarador com dimensões de array opcionais (ex.: v[10], m[3][4], buf[]). */
 declarator
-    : IDENTIFIER
-    | declarator DELIM_LBRACKET expression DELIM_RBRACKET
-    | declarator DELIM_LBRACKET DELIM_RBRACKET
+    : IDENTIFIER {
+        $$ = ast_create_var_decl(data_type_primitive(TYPE_UNKNOWN), $1, NULL, @1.first_line, @1.first_column);
+        free($1);
+    }
+    | declarator DELIM_LBRACKET expression DELIM_RBRACKET {
+        $1->data_type.is_array = true;
+        if ($3 && $3->type == AST_LIT_INT) {
+            $1->data_type.array_size = $3->int_val;
+        }
+        ast_free($3);
+        $$ = $1;
+    }
+    | declarator DELIM_LBRACKET DELIM_RBRACKET {
+        $1->data_type.is_array = true;
+        $1->data_type.array_size = 0;
+        $$ = $1;
+    }
     ;
 
 /* ------------------------------------------------------------------------- */
-/* Comando de expressão (inclui atribuições) e comando vazio.                 */
+/* Comando de expressão e expressões                                          */
 /* ------------------------------------------------------------------------- */
 expression_statement
-    : expression DELIM_SEMICOLON
-    | DELIM_SEMICOLON
+    : expression DELIM_SEMICOLON {
+        $$ = ast_create_expr_stmt($1, @1.first_line, @1.first_column);
+    }
+    | DELIM_SEMICOLON {
+        $$ = NULL;
+    }
     ;
 
-/* ------------------------------------------------------------------------- */
-/* Expressões com precedência de operadores.                                  */
-/* A ambiguidade é resolvida pelas declarações de precedência acima.          */
-/* ------------------------------------------------------------------------- */
 expression
-    : postfix_expression OP_ASSIGN expression
-    | postfix_expression OP_PLUS_ASSIGN expression
-    | postfix_expression OP_MINUS_ASSIGN expression
-    | postfix_expression OP_MULT_ASSIGN expression
-    | postfix_expression OP_DIV_ASSIGN expression
-    | expression OP_OR expression
-    | expression OP_AND expression
-    | expression OP_EQ expression
-    | expression OP_NEQ expression
-    | expression OP_LT expression
-    | expression OP_LE expression
-    | expression OP_GT expression
-    | expression OP_GE expression
-    | expression OP_PLUS expression
-    | expression OP_MINUS expression
-    | expression OP_MULT expression
-    | expression OP_DIV expression
-    | expression OP_MOD expression
-    | OP_MINUS expression %prec UMINUS
-    | OP_NOT expression
-    | DELIM_LPAREN expression DELIM_RPAREN
-    | postfix_expression
+    : postfix_expression OP_ASSIGN expression {
+        $$ = ast_create_assign(OP_ASSIGN, $1, $3, @2.first_line, @2.first_column);
+    }
+    | postfix_expression OP_PLUS_ASSIGN expression {
+        $$ = ast_create_assign(OP_PLUS_ASSIGN, $1, $3, @2.first_line, @2.first_column);
+    }
+    | postfix_expression OP_MINUS_ASSIGN expression {
+        $$ = ast_create_assign(OP_MINUS_ASSIGN, $1, $3, @2.first_line, @2.first_column);
+    }
+    | postfix_expression OP_MULT_ASSIGN expression {
+        $$ = ast_create_assign(OP_MULT_ASSIGN, $1, $3, @2.first_line, @2.first_column);
+    }
+    | postfix_expression OP_DIV_ASSIGN expression {
+        $$ = ast_create_assign(OP_DIV_ASSIGN, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_OR expression {
+        $$ = ast_create_bin_op(OP_OR, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_AND expression {
+        $$ = ast_create_bin_op(OP_AND, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_EQ expression {
+        $$ = ast_create_bin_op(OP_EQ, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_NEQ expression {
+        $$ = ast_create_bin_op(OP_NEQ, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_LT expression {
+        $$ = ast_create_bin_op(OP_LT, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_LE expression {
+        $$ = ast_create_bin_op(OP_LE, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_GT expression {
+        $$ = ast_create_bin_op(OP_GT, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_GE expression {
+        $$ = ast_create_bin_op(OP_GE, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_PLUS expression {
+        $$ = ast_create_bin_op(OP_PLUS, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_MINUS expression {
+        $$ = ast_create_bin_op(OP_MINUS, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_MULT expression {
+        $$ = ast_create_bin_op(OP_MULT, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_DIV expression {
+        $$ = ast_create_bin_op(OP_DIV, $1, $3, @2.first_line, @2.first_column);
+    }
+    | expression OP_MOD expression {
+        $$ = ast_create_bin_op(OP_MOD, $1, $3, @2.first_line, @2.first_column);
+    }
+    | OP_MINUS expression %prec UMINUS {
+        $$ = ast_create_un_op(OP_MINUS, $2, @1.first_line, @1.first_column);
+    }
+    | OP_NOT expression {
+        $$ = ast_create_un_op(OP_NOT, $2, @1.first_line, @1.first_column);
+    }
+    | DELIM_LPAREN expression DELIM_RPAREN {
+        $$ = $2;
+    }
+    | postfix_expression {
+        $$ = $1;
+    }
     ;
 
-/* Pós-fixados: indexação de array e acesso a campo de struct, encadeáveis
-   (ex.: a[i].campo, s.v[j], m[i][j], f().campo). */
+/* Pós-fixados: indexação de array e acesso a campo de struct */
 postfix_expression
-    : primary_expression
-    | postfix_expression DELIM_LBRACKET expression DELIM_RBRACKET
-    | postfix_expression DELIM_DOT IDENTIFIER
+    : primary_expression { $$ = $1; }
+    | postfix_expression DELIM_LBRACKET expression DELIM_RBRACKET {
+        $$ = ast_create_array_access($1, $3, @2.first_line, @2.first_column);
+    }
+    | postfix_expression DELIM_DOT IDENTIFIER {
+        $$ = ast_create_member_access($1, $3, @2.first_line, @2.first_column);
+        free($3);
+    }
     ;
 
 primary_expression
-    : IDENTIFIER
-    | IDENTIFIER DELIM_LPAREN argument_list_opt DELIM_RPAREN   /* chamada de função (incl. recursiva) */
-    | INT_LITERAL
-    | FLOAT_LITERAL
-    | CHAR_LITERAL
-    | STRING_LITERAL
-    | KW_TRUE
-    | KW_FALSE
+    : IDENTIFIER {
+        $$ = ast_create_identifier($1, @1.first_line, @1.first_column);
+        free($1);
+    }
+    | IDENTIFIER DELIM_LPAREN argument_list_opt DELIM_RPAREN {
+        $$ = ast_create_call($1, $3, @1.first_line, @1.first_column);
+        free($1);
+    }
+    | INT_LITERAL {
+        $$ = ast_create_lit_int($1, @1.first_line, @1.first_column);
+    }
+    | FLOAT_LITERAL {
+        $$ = ast_create_lit_float($1, @1.first_line, @1.first_column);
+    }
+    | CHAR_LITERAL {
+        $$ = ast_create_lit_char($1, @1.first_line, @1.first_column);
+    }
+    | STRING_LITERAL {
+        $$ = ast_create_lit_string($1, @1.first_line, @1.first_column);
+        free($1);
+    }
+    | KW_TRUE {
+        $$ = ast_create_lit_bool(true, @1.first_line, @1.first_column);
+    }
+    | KW_FALSE {
+        $$ = ast_create_lit_bool(false, @1.first_line, @1.first_column);
+    }
     ;
 
-/* Lista de argumentos de uma chamada de função. */
 argument_list_opt
-    : %empty
-    | argument_list
+    : %empty        { $$ = NULL; }
+    | argument_list { $$ = $1; }
     ;
 
 argument_list
-    : expression
-    | argument_list DELIM_COMMA expression
+    : expression { $$ = $1; }
+    | argument_list DELIM_COMMA expression {
+        $$ = ast_append_sibling($1, $3);
+    }
     ;
 %%
 
@@ -310,11 +525,15 @@ void yyerror(const char *s) {
 
 int main(int argc, char **argv) {
     int parse_mode = 0;
+    int print_ast = 0;
     char *filepath = NULL;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--parse") == 0 || strcmp(argv[i], "-p") == 0) {
             parse_mode = 1;
+        } else if (strcmp(argv[i], "--ast") == 0 || strcmp(argv[i], "-a") == 0) {
+            parse_mode = 1;
+            print_ast = 1;
         } else if (strcmp(argv[i], "--scan") == 0 || strcmp(argv[i], "-s") == 0) {
             parse_mode = 0;
         } else if (argv[i][0] != '-') {
@@ -334,16 +553,20 @@ int main(int argc, char **argv) {
 
     int status = 0;
 
-    /*
-     * Modo Scanner (padrão via CLI ao passar arquivo .c):
-     * Consome a entrada e imprime a listagem formatada dos tokens gerados.
-     * Caso o usuário passe a flag --parse ou -p, executa a análise sintática do Bison.
-     */
     if (parse_mode) {
         yyin = source;
         status = yyparse();
         if (status == 0 && lexical_errors_count > 0) {
             status = 1;
+        }
+
+        if (status == 0 && print_ast && ast_root) {
+            ast_print(ast_root, 0);
+        }
+
+        if (ast_root) {
+            ast_free(ast_root);
+            ast_root = NULL;
         }
     } else {
         status = run_scanner(source);

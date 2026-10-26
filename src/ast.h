@@ -142,6 +142,9 @@ ASTNode *ast_create_lit_bool(bool val, int line, int col);
 /* Utilitários de Lista */
 ASTNode *ast_append_sibling(ASTNode *list, ASTNode *item);
 
+/* Variável global que armazena a raiz da AST gerada */
+extern ASTNode *ast_root;
+
 /* Visualização e Gerenciamento de Memória */
 void ast_print(const ASTNode *root, int indent);
 void ast_free(ASTNode *root);
