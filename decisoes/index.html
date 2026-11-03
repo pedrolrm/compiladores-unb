@@ -443,11 +443,50 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#solucao-e-alternativas-adotadas" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-podagem-de-escopo-para-viabilidade-da-transpilacao-corte-de-structs-switch-e-shadowing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Solução e Alternativas Adotadas
+        2. Podagem de Escopo para Viabilidade da Transpilação (Corte de Structs, Switch e Shadowing)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Podagem de Escopo para Viabilidade da Transpilação (Corte de Structs, Switch e Shadowing)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contexto-e-motivacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contexto e Motivação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tabela-comparativa-de-decisoes-de-escopo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tabela Comparativa de Decisões de Escopo
       
     </span>
   </a>
@@ -680,11 +719,50 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#solucao-e-alternativas-adotadas" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-podagem-de-escopo-para-viabilidade-da-transpilacao-corte-de-structs-switch-e-shadowing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Solução e Alternativas Adotadas
+        2. Podagem de Escopo para Viabilidade da Transpilação (Corte de Structs, Switch e Shadowing)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Podagem de Escopo para Viabilidade da Transpilação (Corte de Structs, Switch e Shadowing)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contexto-e-motivacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contexto e Motivação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tabela-comparativa-de-decisoes-de-escopo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tabela Comparativa de Decisões de Escopo
       
     </span>
   </a>
@@ -736,7 +814,7 @@
 <hr />
 <h3 id="contexto">Contexto</h3>
 <p>O projeto consiste na construção de um compilador cuja linguagem fonte é um subconjunto de <strong>C</strong> e cuja linguagem alvo final é <strong>Python</strong>. Durante a concepção da linguagem e o planejamento das sprints, a equipe avaliou a viabilidade de incluir suporte a ponteiros (<code>*ptr</code>, <code>&amp;var</code>, <code>p-&gt;campo</code>), aritmética de ponteiros e gerenciamento dinâmico de memória (<code>malloc</code>, <code>calloc</code>, <code>free</code>).</p>
-<p>Após análise técnica detalhada, a equipe deliberou por <strong>não implementar</strong> manipulação direta de ponteiros nem alocação dinâmica de memória no escopo do projeto, restringindo a linguagem a variáveis primitivas, vetores (<code>arrays</code>) com tamanho estático e registros heterogêneos (<code>struct</code>).</p>
+<p>Após análise técnica detalhada, a equipe deliberou por <strong>não implementar</strong> manipulação direta de ponteiros nem alocação dinâmica de memória no escopo do projeto, restringindo a linguagem a variáveis primitivas e vetores (<code>arrays</code>) com tamanho estático.</p>
 <hr />
 <h3 id="por-que-a-manipulacao-de-memoria-e-tao-dificil">Por que a manipulação de memória é tão difícil?</h3>
 <p>A manipulação de memória de baixo nível é um dos aspectos mais desafiadores da teoria e prática da construção de compiladores. A decisão de excluí-la decorreu de quatro fatores de alta complexidade técnica:</p>
@@ -771,51 +849,77 @@
 - Desreferenciação de ponteiro nulo (<em>null pointer dereference</em>).
 - Ponteiros soltos (<em>dangling pointers</em>) decorrentes de descarte prematuro com <code>free</code>.
 - Vazamentos de memória (<em>memory leaks</em>).</p>
-<p>Garantir diagnósticos úteis em tempo de compilação para esses cenários consumiria semanas de desenvolvimento, comprometendo a entrega das fases essenciais da disciplina (Análise Léxica, Análise Sintática, Análise Semântica da AST e Geração de Código).</p>
 <hr />
-<h3 id="solucao-e-alternativas-adotadas">Solução e Alternativas Adotadas</h3>
-<p>Para manter o compilador robusto, seguro e com escopo viável no semestre letivo, optamos pelo seguinte conjunto de restrições:</p>
+<h2 id="2-podagem-de-escopo-para-viabilidade-da-transpilacao-corte-de-structs-switch-e-shadowing">2. Podagem de Escopo para Viabilidade da Transpilação (Corte de Structs, Switch e Shadowing)</h2>
+<h3 id="status_1">Status</h3>
+<p><strong>Aprovado e Adotado</strong> (Sprint 3)</p>
+<hr />
+<h3 id="contexto-e-motivacao">Contexto e Motivação</h3>
+<p>Com a conclusão do front-end básico e a preparação da etapa de <strong>Geração de Código (Transpilação de AST para Python)</strong> escrita em C puro, a equipe reavaliou a viabilidade técnica de manter construções que introduziam discrepâncias semânticas severas entre C e Python:</p>
+<ol>
+<li><strong><code>struct</code> (Registros Heterogêneos):</strong></li>
+<li>Em C, a atribuição <code>p2 = p1</code> ou passagem de structs em funções copia todos os campos por valor. Em Python, objetos de classe são referências compartilhadas e mutáveis. Para manter a semântica de cópia de C sem efeitos colaterais silenciosos, o gerador de código precisaria implementar clonagem profunda automática (<code>copy.copy</code> ou construtores de cópia) e emitir definições de classe Python antes do programa.</li>
+<li><strong><code>switch / case / default</code>:</strong></li>
+<li>Em C, o <code>switch</code> possui comportamento de <em>fall-through</em> implícito na ausência de <code>break</code>. O Python não possui esse comportamento nativo (nem no <code>match-case</code> do Python 3.10). Além disso, um <code>break</code> de <code>switch</code> em C não é válido como <code>break</code> em Python se transpilado para <code>if/elif/else</code>. O comando <code>if/else</code> já atende com rigor total o requisito didático de seleção condicional.</li>
+<li><strong>Arrays Multidimensionais:</strong></li>
+<li>Gerar alocações de listas aninhadas em Python dinamicamente via C (<code>[[0]*col for _ in range(lin)]</code>) eleva a complexidade de manipulação de strings em C sem ganho conceitual adicional em relação a vetores unidimensionais.</li>
+<li><strong>Sombreamento de Variáveis (<em>Shadowing</em>):</strong></li>
+<li>C possui escopo de bloco léxico (<code>{ int x; }</code>), enquanto Python possui escopo em nível de função. Para contornar essa diferença, o compilador seria obrigado a implementar <em>Alpha-Renaming</em> (mangling de identificadores como <code>x_0</code>, <code>x_1</code>), mantendo tabelas de mapeamento e renomeando nós de expressões na emissão. Proibir o shadowing permite que o gerador de código emita diretamente o nome original de cada variável (<code>fprintf(out, "%s", node-&gt;name)</code>).</li>
+</ol>
+<hr />
+<h3 id="tabela-comparativa-de-decisoes-de-escopo">Tabela Comparativa de Decisões de Escopo</h3>
 <table>
 <thead>
 <tr>
-<th>Recurso</th>
+<th>Recurso em C</th>
 <th>Decisão</th>
-<th>Alternativa Implementada</th>
+<th>Alternativa Implementada no Compilador</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>Alocação Dinâmica</strong> (<code>malloc</code>/<code>free</code>)</td>
 <td>Não implementado</td>
-<td>Alocação automática/estática na pilha (<em>stack</em>)</td>
+<td>Alocação automática/estática</td>
 </tr>
 <tr>
-<td><strong>Ponteiros</strong> (<code>*ptr</code>, <code>&amp;var</code>)</td>
+<td><strong>Ponteiros</strong> (<code>*ptr</code>, <code>&amp;var</code>, <code>p-&gt;campo</code>)</td>
 <td>Não implementado</td>
 <td>Variáveis escalares acessadas diretamente pelo identificador</td>
 </tr>
 <tr>
-<td><strong>Acesso Indireto</strong> (<code>p-&gt;campo</code>)</td>
-<td>Não implementado</td>
-<td>Acesso direto a membros via operador ponto (<code>struct.campo</code>)</td>
+<td><strong>Estruturas Heterogêneas</strong> (<code>struct</code>)</td>
+<td>Podado do escopo</td>
+<td>Variáveis primitivas e vetores</td>
 </tr>
 <tr>
-<td><strong>Estruturas de Dados</strong></td>
-<td>Suportadas</td>
-<td><code>struct</code> e vetores (<code>arrays</code>) com tamanhos definidos</td>
+<td><strong>Seleção Múltipla</strong> (<code>switch</code>)</td>
+<td>Podado do escopo</td>
+<td>Seleção condicional com <code>if</code> e <code>if-else</code></td>
+</tr>
+<tr>
+<td><strong>Arrays Multidimensionais</strong></td>
+<td>Podado do escopo</td>
+<td>Vetores unidimensionais estáticos (<code>int v[N]</code>)</td>
+</tr>
+<tr>
+<td><strong>Sombreamento de Variáveis</strong> (<em>Shadowing</em>)</td>
+<td>Proibido no semântico</td>
+<td>Nomes de variáveis locais únicos por função</td>
 </tr>
 <tr>
 <td><strong>Passagem de Parâmetros</strong></td>
 <td>Simplificada</td>
-<td>Passagem por valor para tipos primitivos e cópia de estruturas</td>
+<td>Passagem por valor para tipos primitivos e vetores 1D</td>
 </tr>
 </tbody>
 </table>
+<hr />
 <h3 id="conclusao-e-beneficios">Conclusão e Benefícios</h3>
-<p>Essa decisão garantiu que a equipe pudesse:
-1. Construir uma <strong>especificação léxica e sintática rigorosa e sem ambiguidades</strong>, com 100% de testes automatizados aprovados;
-2. Focar na correta modelagem da <strong>Árvore Sintática Abstrata (AST)</strong> e da <strong>Tabela de Símbolos</strong>;
-3. Assegurar que a futura geração de código para <strong>Python</strong> seja limpa, idiomática e mapeie naturalmente as estruturas e funções da linguagem fonte.</p>
+<p>Essa refatoração garantiu que:
+1. O compilador permaneça com <strong>zero vazamentos de memória e 100% de testes automatizados aprovados</strong>;
+2. A Tabela de Símbolos e a AST fiquem diretamente alinhadas à arquitetura do futuro gerador de código (<code>src/codegen.c</code>);
+3. A equipe possa implementar o gerador de código manualmente em C de forma limpa, direta e depurável.</p>
 
 
 

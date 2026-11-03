@@ -414,10 +414,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#terminais-lexicos" class="md-nav__link">
+  <a href="#terminais-lexicos-na-gramatica" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Terminais léxicos
+        Terminais léxicos na Gramática
       
     </span>
   </a>
@@ -470,10 +470,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#selecao-ifelse-switch" class="md-nav__link">
+  <a href="#selecao-ifelse" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Seleção (if/else, switch)
+        Seleção (if/else)
       
     </span>
   </a>
@@ -503,10 +503,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#declaracoes-tipos-e-structs" class="md-nav__link">
+  <a href="#declaracoes-e-tipos" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Declarações, tipos e structs
+        Declarações e tipos
       
     </span>
   </a>
@@ -545,17 +545,6 @@
     <span class="md-ellipsis">
       
         Precedência e associatividade
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#estado-do-documento" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Estado do documento
       
     </span>
   </a>
@@ -635,10 +624,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#terminais-lexicos" class="md-nav__link">
+  <a href="#terminais-lexicos-na-gramatica" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Terminais léxicos
+        Terminais léxicos na Gramática
       
     </span>
   </a>
@@ -691,10 +680,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#selecao-ifelse-switch" class="md-nav__link">
+  <a href="#selecao-ifelse" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Seleção (if/else, switch)
+        Seleção (if/else)
       
     </span>
   </a>
@@ -724,10 +713,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#declaracoes-tipos-e-structs" class="md-nav__link">
+  <a href="#declaracoes-e-tipos" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Declarações, tipos e structs
+        Declarações e tipos
       
     </span>
   </a>
@@ -772,17 +761,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#estado-do-documento" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Estado do documento
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -804,21 +782,16 @@
 
 
 <h1 id="gramatica-livre-de-contexto-glc">Gramática Livre de Contexto (GLC)</h1>
-<p>Este documento descreve, em EBNF, a gramática da linguagem alvo <strong>tal como
-implementada</strong> em <a href="https://github.com/pedrolrm/compiladores-unb/blob/main/src/parser.y"><code>src/parser.y</code></a> (bison), com os terminais
-léxicos definidos em <a href="https://github.com/pedrolrm/compiladores-unb/blob/main/src/scanner.l"><code>src/scanner.l</code></a> (flex). Cada
-produção abaixo corresponde 1:1 a uma regra do parser — este documento não
-descreve construções planejadas e ainda não implementadas.</p>
+<p>Este documento descreve, em EBNF, a gramática da linguagem alvo <strong>tal como implementada</strong> em <a href="https://github.com/pedrolrm/compiladores-unb/blob/main/src/parser.y"><code>src/parser.y</code></a> (bison), com os terminais léxicos definidos em <a href="https://github.com/pedrolrm/compiladores-unb/blob/main/src/scanner.l"><code>src/scanner.l</code></a> (flex). Cada produção abaixo corresponde 1:1 a uma regra do parser simplificado para a futura geração de código Python.</p>
 <h2 id="notacao">Notação</h2>
 <ul>
 <li><code>|</code> — alternativa.</li>
 <li><code>[ x ]</code> — <code>x</code> é opcional.</li>
 <li><code>{ x }</code> — <code>x</code> se repete zero ou mais vezes.</li>
 <li><code>"texto"</code> — terminal literal (palavra-chave, operador ou delimitador).</li>
-<li><code>IDENTIFICADOR</code>, <code>LIT_INT</code>, <code>LIT_FLOAT</code>, <code>LIT_CHAR</code>, <code>LIT_STRING</code> — terminais
-  léxicos com valor semântico (vindos do scanner).</li>
+<li><code>IDENTIFICADOR</code>, <code>LIT_INT</code>, <code>LIT_FLOAT</code>, <code>LIT_CHAR</code>, <code>LIT_STRING</code> — terminais léxicos com valor semântico (vindos do scanner).</li>
 </ul>
-<h2 id="terminais-lexicos">Terminais léxicos</h2>
+<h2 id="terminais-lexicos-na-gramatica">Terminais léxicos na Gramática</h2>
 <table>
 <thead>
 <tr>
@@ -829,11 +802,11 @@ descreve construções planejadas e ainda não implementadas.</p>
 <tbody>
 <tr>
 <td>Palavras-chave de tipo</td>
-<td><code>int</code>, <code>float</code>, <code>char</code>, <code>bool</code>, <code>void</code>, <code>struct</code></td>
+<td><code>int</code>, <code>float</code>, <code>char</code>, <code>bool</code>, <code>void</code></td>
 </tr>
 <tr>
 <td>Palavras-chave de controle de fluxo</td>
-<td><code>if</code>, <code>else</code>, <code>while</code>, <code>for</code>, <code>switch</code>, <code>case</code>, <code>default</code>, <code>break</code>, <code>continue</code>, <code>return</code></td>
+<td><code>if</code>, <code>else</code>, <code>while</code>, <code>for</code>, <code>break</code>, <code>continue</code>, <code>return</code></td>
 </tr>
 <tr>
 <td>Literais booleanos</td>
@@ -857,18 +830,13 @@ descreve construções planejadas e ainda não implementadas.</p>
 </tr>
 <tr>
 <td>Delimitadores</td>
-<td><code>(</code>, <code>)</code>, <code>{</code>, <code>}</code>, <code>[</code>, <code>]</code>, <code>;</code>, <code>,</code>, <code>.</code></td>
+<td><code>(</code>, <code>)</code>, <code>{</code>, <code>}</code>, <code>[</code>, <code>]</code>, <code>;</code>, <code>,</code></td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p><strong>Nota:</strong> o token <code>.</code> (<code>DELIM_DOT</code>) é utilizado no acesso a campo de struct em <code>postfix_expression</code>
-e é plenamente reconhecido pelo analisador léxico (<code>src/scanner.l</code>).</p>
+<p>As palavras-chave lexadas pelo scanner como reserva de compatibilidade (<code>struct</code>, <code>switch</code>, <code>case</code>, <code>default</code>, <code>double</code>, <code>long</code>, <code>short</code>, <code>unsigned</code>, <code>const</code>, <code>typedef</code>, <code>do</code>) e operadores como <code>++</code>, <code>--</code>, <code>?</code>, <code>:</code>, <code>.</code> não participam das produções ativas do parser conforme a Decisão de Projeto nº 2 (<a href="../decisoes/"><code>docs/decisoes.md</code></a>).</p>
 </blockquote>
-<p>As demais palavras-chave lexadas pelo scanner (<code>double</code>, <code>long</code>, <code>short</code>,
-<code>unsigned</code>, <code>const</code>, <code>typedef</code>, <code>do</code>) e os operadores <code>++</code>, <code>--</code>, <code>?</code>, <code>:</code>
-(fora do uso de <code>:</code> em <code>case</code>/<code>default</code>) ainda não participam de nenhuma
-produção do parser e por isso não aparecem na gramática abaixo.</p>
 <h2 id="producoes">Produções</h2>
 <h3 id="programa-e-comandos">Programa e comandos</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">programa            </span><span class="err">::</span><span class="o">=</span> <span class="p">{</span> <span class="k">comando </span><span class="p">}</span>
@@ -878,9 +846,8 @@ produção do parser e por isso não aparecem na gramática abaixo.</p>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                        <span class="p">|</span> <span class="k">comando_expressao</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                        <span class="p">|</span> <span class="k">bloco</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                        <span class="p">|</span> <span class="k">comando_selecao</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                        <span class="p">|</span> <span class="k">comando_rotulado</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                        <span class="p">|</span> <span class="k">comando_iteracao</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                        <span class="p">|</span> <span class="k">comando_desvio</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                        <span class="p">|</span> <span class="k">comando_iteracao</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                        <span class="p">|</span> <span class="k">comando_desvio</span>
 </code></pre></div>
 <h3 id="funcoes">Funções</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">definicao_funcao     </span><span class="err">::</span><span class="o">=</span> <span class="k">especificador_tipo IDENTIFICADOR </span><span class="s2">"("</span> <span class="k">lista_parametros </span><span class="s2">")"</span> <span class="k">bloco</span>
@@ -893,12 +860,8 @@ produção do parser e por isso não aparecem na gramática abaixo.</p>
 <h3 id="bloco">Bloco</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">bloco                 </span><span class="err">::</span><span class="o">=</span> <span class="s2">"{"</span> <span class="p">{</span> <span class="k">comando </span><span class="p">}</span> <span class="s2">"}"</span>
 </code></pre></div>
-<h3 id="selecao-ifelse-switch">Seleção (<code>if</code>/<code>else</code>, <code>switch</code>)</h3>
+<h3 id="selecao-ifelse">Seleção (<code>if</code>/<code>else</code>)</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">comando_selecao       </span><span class="err">::</span><span class="o">=</span> <span class="s2">"if"</span> <span class="s2">"("</span> <span class="k">expressao </span><span class="s2">")"</span> <span class="k">comando </span><span class="p">[</span> <span class="s2">"else"</span> <span class="k">comando </span><span class="p">]</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                        <span class="p">|</span> <span class="s2">"switch"</span> <span class="s2">"("</span> <span class="k">expressao </span><span class="s2">")"</span> <span class="k">comando</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">comando_rotulado      </span><span class="err">::=</span> <span class="s2">"case"</span> <span class="k">expressao </span><span class="s2">":"</span> <span class="k">comando</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>                        <span class="p">|</span> <span class="s2">"default"</span> <span class="s2">":"</span> <span class="k">comando</span>
 </code></pre></div>
 <blockquote>
 <p>A ambiguidade clássica do <em>dangling else</em> é resolvida por precedência:
@@ -918,25 +881,19 @@ vs. <code>KW_ELSE</code> em <code>src/parser.y</code>), fazendo o parser preferi
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                        <span class="p">|</span> <span class="s2">"continue"</span> <span class="s2">";"</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>                        <span class="p">|</span> <span class="s2">"return"</span> <span class="p">[</span> <span class="k">expressao </span><span class="p">]</span> <span class="s2">";"</span>
 </code></pre></div>
-<h3 id="declaracoes-tipos-e-structs">Declarações, tipos e structs</h3>
+<h3 id="declaracoes-e-tipos">Declarações e tipos</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">declaracao             </span><span class="err">::</span><span class="o">=</span> <span class="k">especificador_tipo lista_declaradores_init </span><span class="s2">";"</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>                        <span class="p">|</span> <span class="k">especificador_tipo </span><span class="s2">";"</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">especificador_tipo     </span><span class="err">::=</span> <span class="s2">"int"</span> <span class="p">|</span> <span class="s2">"float"</span> <span class="p">|</span> <span class="s2">"char"</span> <span class="p">|</span> <span class="s2">"bool"</span> <span class="p">|</span> <span class="k">especificador_struct</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="k">especificador_struct   </span><span class="err">::=</span> <span class="s2">"struct"</span> <span class="k">IDENTIFICADOR </span><span class="s2">"{"</span> <span class="p">{</span> <span class="k">declaracao </span><span class="p">}</span> <span class="s2">"}"</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>                        <span class="p">|</span> <span class="s2">"struct"</span> <span class="k">IDENTIFICADOR</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">especificador_tipo     </span><span class="err">::=</span> <span class="s2">"int"</span> <span class="p">|</span> <span class="s2">"float"</span> <span class="p">|</span> <span class="s2">"char"</span> <span class="p">|</span> <span class="s2">"bool"</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">lista_declaradores_init </span><span class="err">::=</span> <span class="k">declarador_init </span><span class="p">{</span> <span class="s2">","</span> <span class="k">declarador_init </span><span class="p">}</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">declarador_init        </span><span class="err">::=</span> <span class="k">declarador </span><span class="p">[</span> <span class="s2">"="</span> <span class="k">expressao </span><span class="p">]</span>
 <a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">lista_declaradores_init </span><span class="err">::=</span> <span class="k">declarador_init </span><span class="p">{</span> <span class="s2">","</span> <span class="k">declarador_init </span><span class="p">}</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="k">declarador_init        </span><span class="err">::=</span> <span class="k">declarador </span><span class="p">[</span> <span class="s2">"="</span> <span class="k">expressao </span><span class="p">]</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">declarador              </span><span class="err">::=</span> <span class="k">IDENTIFICADOR </span><span class="p">{</span> <span class="s2">"["</span> <span class="p">[</span> <span class="k">expressao </span><span class="p">]</span> <span class="s2">"]"</span> <span class="p">}</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">declarador              </span><span class="err">::=</span> <span class="k">IDENTIFICADOR </span><span class="p">[</span> <span class="s2">"["</span> <span class="p">[</span> <span class="k">expressao </span><span class="p">]</span> <span class="s2">"]"</span> <span class="p">]</span>
 </code></pre></div>
 <blockquote>
-<p><code>declarador</code> cobre variáveis escalares, arrays (<code>v[10]</code>), arrays
-multidimensionais (<code>m[3][4]</code>) e arrays sem tamanho definido (<code>buf[]</code>), via
-repetição de colchetes.</p>
+<p><code>declarador</code> cobre variáveis escalares e vetores unidimensionais com tamanho fixo (<code>v[10]</code>) ou inferido (<code>buf[]</code>).</p>
 </blockquote>
 <h3 id="comando-de-expressao">Comando de expressão</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">comando_expressao      </span><span class="err">::</span><span class="o">=</span> <span class="p">[</span> <span class="k">expressao </span><span class="p">]</span> <span class="s2">";"</span>
@@ -956,24 +913,16 @@ repetição de colchetes.</p>
 <a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>
 <a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="k">expressao_pos           </span><span class="err">::=</span> <span class="k">expressao_primaria</span>
 <a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>                        <span class="p">|</span> <span class="k">expressao_pos </span><span class="s2">"["</span> <span class="k">expressao </span><span class="s2">"]"</span>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>                        <span class="p">|</span> <span class="k">expressao_pos </span><span class="s2">"."</span> <span class="k">IDENTIFICADOR</span>
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="k">expressao_primaria      </span><span class="err">::=</span> <span class="k">IDENTIFICADOR</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>                        <span class="p">|</span> <span class="k">IDENTIFICADOR </span><span class="s2">"("</span> <span class="k">lista_argumentos </span><span class="s2">")"</span>
-<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>                        <span class="p">|</span> <span class="k">LIT_INT </span><span class="p">|</span> <span class="k">LIT_FLOAT </span><span class="p">|</span> <span class="k">LIT_CHAR </span><span class="p">|</span> <span class="k">LIT_STRING</span>
-<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>                        <span class="p">|</span> <span class="s2">"true"</span> <span class="p">|</span> <span class="s2">"false"</span>
-<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>
-<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="k">lista_argumentos        </span><span class="err">::=</span> <span class="p">[</span> <span class="k">expressao </span><span class="p">{</span> <span class="s2">","</span> <span class="k">expressao </span><span class="p">}</span> <span class="p">]</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="k">expressao_primaria      </span><span class="err">::=</span> <span class="k">IDENTIFICADOR</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>                        <span class="p">|</span> <span class="k">IDENTIFICADOR </span><span class="s2">"("</span> <span class="k">lista_argumentos </span><span class="s2">")"</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>                        <span class="p">|</span> <span class="k">LIT_INT </span><span class="p">|</span> <span class="k">LIT_FLOAT </span><span class="p">|</span> <span class="k">LIT_CHAR </span><span class="p">|</span> <span class="k">LIT_STRING</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>                        <span class="p">|</span> <span class="s2">"true"</span> <span class="p">|</span> <span class="s2">"false"</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="k">lista_argumentos        </span><span class="err">::=</span> <span class="p">[</span> <span class="k">expressao </span><span class="p">{</span> <span class="s2">","</span> <span class="k">expressao </span><span class="p">}</span> <span class="p">]</span>
 </code></pre></div>
-<blockquote>
-<p><code>expressao_pos</code> (indexação <code>[]</code> e acesso a campo <code>.</code>) é encadeável, o que
-permite expressões como <code>a[i].campo</code>, <code>m[i][j]</code> e <code>f().campo</code>. O lado
-esquerdo de uma atribuição é restrito a <code>expressao_pos</code> (não é possível
-atribuir a uma expressão arbitrária, ex.: <code>(a + b) = 1</code> é inválido).</p>
-</blockquote>
 <h2 id="precedencia-e-associatividade">Precedência e associatividade</h2>
-<p>Resolvida via as declarações de precedência de <code>src/parser.y</code> (da menor para
-a maior):</p>
+<p>Resolvida via as declarações de precedência de <code>src/parser.y</code> (da menor para a maior):</p>
 <table>
 <thead>
 <tr>
@@ -1025,15 +974,6 @@ a maior):</p>
 </tr>
 </tbody>
 </table>
-<p>Essas regras eliminam a ambiguidade da gramática de expressões (que, sem
-precedência, seria ambígua por permitir múltiplas árvores de derivação para
-a mesma expressão), garantindo, por exemplo, que <code>a + b * c</code> seja
-interpretado como <code>a + (b * c)</code>.</p>
-<h2 id="estado-do-documento">Estado do documento</h2>
-<p>Esta gramática reflete o estado <strong>atual</strong> do parser (branch <code>dev</code>). Ela deve
-ser atualizada em conjunto com qualquer PR que adicione ou altere produções
-em <code>src/parser.y</code> (ex.: operador ternário, <code>++</code>/<code>--</code>, <code>do-while</code>, <code>typedef</code>,
-tipos adicionais), para não divergir do compilador real.</p>
 
 
 

@@ -886,9 +886,9 @@
 <h3 id="22-categorias-de-nos-astnodetype">2.2 Categorias de Nós (<code>ASTNodeType</code>)</h3>
 <ul>
 <li><strong>Estruturais</strong>: <code>AST_PROGRAM</code>, <code>AST_BLOCK</code>, <code>AST_EXPR_STMT</code>.</li>
-<li><strong>Declarações</strong>: <code>AST_VAR_DECL</code>, <code>AST_FUNC_DEF</code>, <code>AST_PARAM_DECL</code>, <code>AST_STRUCT_DECL</code>.</li>
-<li><strong>Comandos de Controle</strong>: <code>AST_IF</code>, <code>AST_WHILE</code>, <code>AST_FOR</code>, <code>AST_SWITCH</code>, <code>AST_CASE</code>, <code>AST_DEFAULT</code>, <code>AST_BREAK</code>, <code>AST_CONTINUE</code>, <code>AST_RETURN</code>.</li>
-<li><strong>Expressões</strong>: <code>AST_BIN_OP</code>, <code>AST_UN_OP</code>, <code>AST_ASSIGN</code>, <code>AST_CALL</code>, <code>AST_ARRAY_ACCESS</code>, <code>AST_MEMBER_ACCESS</code>.</li>
+<li><strong>Declarações</strong>: <code>AST_VAR_DECL</code>, <code>AST_FUNC_DEF</code>, <code>AST_PARAM_DECL</code>.</li>
+<li><strong>Comandos de Controle</strong>: <code>AST_IF</code>, <code>AST_WHILE</code>, <code>AST_FOR</code>, <code>AST_BREAK</code>, <code>AST_CONTINUE</code>, <code>AST_RETURN</code>.</li>
+<li><strong>Expressões</strong>: <code>AST_BIN_OP</code>, <code>AST_UN_OP</code>, <code>AST_ASSIGN</code>, <code>AST_CALL</code>, <code>AST_ARRAY_ACCESS</code>.</li>
 <li><strong>Literais / Folhas</strong>: <code>AST_IDENTIFIER</code>, <code>AST_LIT_INT</code>, <code>AST_LIT_FLOAT</code>, <code>AST_LIT_CHAR</code>, <code>AST_LIT_STRING</code>, <code>AST_LIT_BOOL</code>.</li>
 </ul>
 <h3 id="23-integracao-com-o-bison">2.3 Integração com o Bison</h3>
@@ -922,23 +922,22 @@
 <h3 id="32-resolucao-lexica-de-simbolos">3.2 Resolução Léxica de Símbolos</h3>
 <ul>
 <li><strong><code>symtab_lookup_local(scope, name)</code></strong>: Busca <strong>apenas</strong> no escopo corrente. Utilizado para detectar redeclarações inválidas no mesmo nível.</li>
-<li><strong><code>symtab_lookup(scope, name)</code></strong>: Busca no escopo corrente e, se não encontrar, sobe recursivamente para os escopos pais até o escopo global. Permite sombreamento (<em>shadowing</em>) de variáveis sem conflito.</li>
-<li><strong><code>symtab_lookup_member(struct_scope, member)</code></strong>: Busca um membro dentro do namespace particular de uma struct.</li>
+<li><strong><code>symtab_lookup(scope, name)</code></strong>: Busca no escopo corrente e, se não encontrar, sobe recursivamente para os escopos pais até o escopo global. No escopo simplificado, o analisador semântico proíbe sombreamento (<em>shadowing</em>) dentro da mesma função para garantir transpilação direta para Python.</li>
 </ul>
 <hr />
 <h2 id="4-analise-semantica-e-verificacao-de-tipos">4. Análise Semântica e Verificação de Tipos</h2>
 <p>A análise semântica é realizada em duas passadas sobre a AST:</p>
 <ol>
 <li><strong>Passo 1 (Coleta de Declarações Globais)</strong>:</li>
-<li>Registra no escopo global todas as structs e assinaturas de funções.</li>
+<li>Registra no escopo global todas as assinaturas de funções.</li>
 <li>
-<p>Permite que funções se chamem livremente e que structs sejam referenciadas em tipos de retorno ou parâmetros.</p>
+<p>Permite que funções se chamem mutuamente em qualquer ordem de definição.</p>
 </li>
 <li>
 <p><strong>Passo 2 (Verificação Completa de Escopos e Tipos)</strong>:</p>
 </li>
-<li><strong>Resolução de Identificadores</strong>: Garante que variáveis, funções e membros acessados foram previamente declarados.</li>
-<li><strong>Checagem de Redeclarações</strong>: Impede a declaração duplicada de variáveis ou parâmetros no mesmo escopo.</li>
+<li><strong>Resolução de Identificadores</strong>: Garante que variáveis e funções acessadas foram previamente declaradas.</li>
+<li><strong>Checagem de Redeclarações e Shadowing</strong>: Impede declaração duplicada no mesmo escopo e bloqueia sombreamento de variáveis dentro da mesma função.</li>
 <li><strong>Sistema de Tipos e Coerção</strong>:<ul>
 <li>Tipos idênticos são aceitos diretamente.</li>
 <li>Permite promoção implícita de <code>int</code> para <code>float</code> em atribuições e operações aritméticas mistas.</li>
@@ -946,10 +945,9 @@
 </ul>
 </li>
 <li><strong>Chamadas de Função</strong>: Confere aridade (quantidade de argumentos) e tipos dos argumentos em relação aos parâmetros formais.</li>
-<li><strong>Acesso a Structs</strong>: Valida se a base da operação <code>.</code> é uma struct e se o membro existe em sua definição.</li>
 <li><strong>Arrays</strong>: Valida se a base da indexação <code>[]</code> é um vetor e se o índice é do tipo inteiro.</li>
 <li><strong>Desvios de Fluxo</strong>:<ul>
-<li><code>break</code>: permitido apenas dentro de laços de repetição (<code>while</code>, <code>for</code>) ou <code>switch</code>.</li>
+<li><code>break</code>: permitido apenas dentro de laços de repetição (<code>while</code>, <code>for</code>).</li>
 <li><code>continue</code>: permitido apenas dentro de laços de repetição.</li>
 <li><code>return</code>: confere se o valor retornado é compatível com o tipo de retorno da função corrente (e rejeita retornos com valor em funções <code>void</code>).</li>
 </ul>
@@ -1038,12 +1036,12 @@
 <ul>
 <li><strong>Testes Léxicos</strong>: <code>tests/run_tests.py</code> (11 testes)</li>
 <li><strong>Testes da AST</strong>: <code>tests/test_ast.py</code> (6 testes)</li>
-<li><strong>Testes Semânticos</strong>: <code>tests/test_semantic.py</code> (12 testes)</li>
+<li><strong>Testes Semânticos</strong>: <code>tests/test_semantic.py</code> (13 testes)</li>
 </ul>
 <p>Para rodar toda a bateria de testes:
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>make<span class="w"> </span><span class="nb">test</span>
 </code></pre></div>
-Resultando em 29 testes aprovados (100% de sucesso).</p>
+Resultando em 30 testes aprovados (100% de sucesso).</p>
 
 
 
