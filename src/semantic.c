@@ -10,7 +10,6 @@ static Scope *global_scope = NULL;
 static bool in_function = false;
 static DataType current_func_return_type;
 static int loop_depth = 0;
-static int switch_depth = 0;
 
 void report_semantic_error(int line, int col, const char *msg) {
     semantic_errors_count++;
@@ -38,31 +37,11 @@ static bool is_type_compatible(const DataType *dest, const DataType *src) {
 static void check_node(ASTNode *node);
 
 /*
- * Passo 1: Pré-coleta de declarações globais de structs e funções
+ * Passo 1: Pré-coleta de declarações globais de funções
  */
 static void collect_global_declarations(ASTNode *node) {
     while (node) {
-        if (node->type == AST_STRUCT_DECL) {
-            if (symtab_lookup_local(global_scope, node->name) != NULL) {
-                char msg[128];
-                snprintf(msg, sizeof(msg), "redeclaração da struct '%s'", node->name);
-                report_semantic_error(node->line, node->column, msg);
-            } else {
-                Scope *struct_scope = symtab_create_global();
-                ASTNode *member = node->left;
-                while (member) {
-                    if (member->type == AST_VAR_DECL) {
-                        if (symtab_insert_var(struct_scope, member->name, member->data_type, member->line, member->column) == NULL) {
-                            char msg[128];
-                            snprintf(msg, sizeof(msg), "membro duplicado '%s' na struct '%s'", member->name, node->name);
-                            report_semantic_error(member->line, member->column, msg);
-                        }
-                    }
-                    member = member->next;
-                }
-                symtab_insert_struct(global_scope, node->name, struct_scope, node->line, node->column);
-            }
-        } else if (node->type == AST_FUNC_DEF) {
+        if (node->type == AST_FUNC_DEF) {
             if (symtab_lookup_local(global_scope, node->name) != NULL) {
                 char msg[128];
                 snprintf(msg, sizeof(msg), "redeclaração da função '%s'", node->name);
@@ -95,7 +74,7 @@ static void collect_global_declarations(ASTNode *node) {
 }
 
 /*
- * Passo 2: Verificação semântica e resolução de escopos
+ * Passo 2: Verificação semântica, resolução de escopos e tipos
  */
 static void check_node(ASTNode *node) {
     if (!node) return;
@@ -105,21 +84,7 @@ static void check_node(ASTNode *node) {
             check_node(node->left);
             break;
 
-        case AST_STRUCT_DECL:
-            /* Já registrado no Passo 1 */
-            break;
-
         case AST_VAR_DECL: {
-            /* Verifica se a struct foi definida caso seja tipo struct */
-            if (node->data_type.base == TYPE_STRUCT && node->data_type.struct_name) {
-                Symbol *st = symtab_lookup(global_scope, node->data_type.struct_name);
-                if (!st || st->kind != SYM_STRUCT) {
-                    char msg[128];
-                    snprintf(msg, sizeof(msg), "tipo 'struct %s' não definido", node->data_type.struct_name);
-                    report_semantic_error(node->line, node->column, msg);
-                }
-            }
-
             /* Se houver expressão de inicialização, checa primeiro a expressão */
             if (node->left) {
                 check_node(node->left);
@@ -132,11 +97,18 @@ static void check_node(ASTNode *node) {
                 }
             }
 
-            /* Insere no escopo atual */
-            if (symtab_insert_var(current_scope, node->name, node->data_type, node->line, node->column) == NULL) {
+            /* Bloqueia redeclaração no mesmo escopo e sombreamento (shadowing) dentro da função */
+            Symbol *existing = symtab_lookup(current_scope, node->name);
+            if (existing && (current_scope->level == 0 || existing->scope_level > 0)) {
                 char msg[128];
-                snprintf(msg, sizeof(msg), "redeclaração da variável '%s' no mesmo escopo", node->name);
+                if (existing->scope_level == current_scope->level) {
+                    snprintf(msg, sizeof(msg), "redeclaração da variável '%s' no mesmo escopo", node->name);
+                } else {
+                    snprintf(msg, sizeof(msg), "redeclaração da variável '%s' no escopo da função (sombreamento não permitido)", node->name);
+                }
                 report_semantic_error(node->line, node->column, msg);
+            } else {
+                symtab_insert_var(current_scope, node->name, node->data_type, node->line, node->column);
             }
             break;
         }
@@ -212,31 +184,9 @@ static void check_node(ASTNode *node) {
             break;
         }
 
-        case AST_SWITCH:
-            check_node(node->left);
-            switch_depth++;
-            check_node(node->right);
-            switch_depth--;
-            break;
-
-        case AST_CASE:
-            if (switch_depth == 0) {
-                report_semantic_error(node->line, node->column, "comando 'case' fora de bloco 'switch'");
-            }
-            check_node(node->left);
-            check_node(node->right);
-            break;
-
-        case AST_DEFAULT:
-            if (switch_depth == 0) {
-                report_semantic_error(node->line, node->column, "comando 'default' fora de bloco 'switch'");
-            }
-            check_node(node->right);
-            break;
-
         case AST_BREAK:
-            if (loop_depth == 0 && switch_depth == 0) {
-                report_semantic_error(node->line, node->column, "comando 'break' fora de laço de repetição ou 'switch'");
+            if (loop_depth == 0) {
+                report_semantic_error(node->line, node->column, "comando 'break' fora de laço de repetição");
             }
             break;
 
@@ -336,34 +286,6 @@ static void check_node(ASTNode *node) {
             break;
         }
 
-        case AST_MEMBER_ACCESS: {
-            check_node(node->left);
-
-            if (node->left->data_type.base != TYPE_UNKNOWN) {
-                if (node->left->data_type.base != TYPE_STRUCT) {
-                    report_semantic_error(node->line, node->column, "acesso de membro '.' em identificador que não é struct");
-                    node->data_type = data_type_primitive(TYPE_UNKNOWN);
-                } else {
-                    Symbol *st = symtab_lookup(global_scope, node->left->data_type.struct_name);
-                    if (!st || !st->struct_scope) {
-                        report_semantic_error(node->line, node->column, "definição da struct não encontrada");
-                        node->data_type = data_type_primitive(TYPE_UNKNOWN);
-                    } else {
-                        Symbol *member = symtab_lookup_member(st->struct_scope, node->name);
-                        if (!member) {
-                            char msg[128];
-                            snprintf(msg, sizeof(msg), "membro '%s' não existe na struct '%s'", node->name, node->left->data_type.struct_name);
-                            report_semantic_error(node->line, node->column, msg);
-                            node->data_type = data_type_primitive(TYPE_UNKNOWN);
-                        } else {
-                            node->data_type = member->type;
-                        }
-                    }
-                }
-            }
-            break;
-        }
-
         case AST_BIN_OP: {
             check_node(node->left);
             check_node(node->right);
@@ -431,7 +353,6 @@ static void check_node(ASTNode *node) {
 int semantic_analyze(ASTNode *root, Scope **out_global_scope) {
     semantic_errors_count = 0;
     loop_depth = 0;
-    switch_depth = 0;
     in_function = false;
 
     global_scope = symtab_create_global();

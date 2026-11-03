@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 /*
- * Tipos de dados suportados pelo sistema de tipos do compilador.
+ * Tipos de dados suportados pelo sistema de tipos do compilador simplificado.
  */
 typedef enum {
     TYPE_UNKNOWN = 0,
@@ -14,16 +14,14 @@ typedef enum {
     TYPE_INT,
     TYPE_FLOAT,
     TYPE_CHAR,
-    TYPE_BOOL,
-    TYPE_STRUCT
+    TYPE_BOOL
 } BaseType;
 
 /*
- * Descritor de tipo com suporte a structs e arrays.
+ * Descritor de tipo com suporte a arrays unidimensionais.
  */
 typedef struct DataType {
     BaseType base;
-    char *struct_name;    /* Preenchido quando base == TYPE_STRUCT */
     bool is_array;
     int array_size;       /* Tamanho fixo do array (se > 0) ou 0 para indefinido */
 } DataType;
@@ -39,7 +37,6 @@ typedef enum {
     AST_VAR_DECL,
     AST_FUNC_DEF,
     AST_PARAM_DECL,
-    AST_STRUCT_DECL,
 
     /* Comandos (Statements) */
     AST_BLOCK,
@@ -47,9 +44,6 @@ typedef enum {
     AST_IF,
     AST_WHILE,
     AST_FOR,
-    AST_SWITCH,
-    AST_CASE,
-    AST_DEFAULT,
     AST_BREAK,
     AST_CONTINUE,
     AST_RETURN,
@@ -60,7 +54,6 @@ typedef enum {
     AST_ASSIGN,
     AST_CALL,
     AST_ARRAY_ACCESS,
-    AST_MEMBER_ACCESS,
 
     /* Literais e Identificadores */
     AST_IDENTIFIER,
@@ -81,7 +74,7 @@ typedef struct ASTNode {
     DataType data_type;       /* Tipo de dado da declaração ou inferido na expressão */
 
     /* Dados para literais e nós folha */
-    char *name;               /* Identificador, nome de função, struct ou membro */
+    char *name;               /* Identificador ou nome de função */
     int int_val;              /* Para literais inteiros e booleanos */
     float float_val;          /* Para literais de ponto flutuante */
     char char_val;            /* Para literais de caractere */
@@ -99,7 +92,6 @@ typedef struct ASTNode {
 
 /* Construtores e utilitários de Tipos */
 DataType data_type_primitive(BaseType base);
-DataType data_type_struct(const char *struct_name);
 DataType data_type_array(DataType elem_type, int size);
 const char *base_type_to_string(BaseType base);
 const char *data_type_to_string(const DataType *dt);
@@ -111,16 +103,12 @@ ASTNode *ast_create_program(ASTNode *declarations, int line, int col);
 ASTNode *ast_create_var_decl(DataType dt, const char *name, ASTNode *init_expr, int line, int col);
 ASTNode *ast_create_func_def(DataType ret_type, const char *name, ASTNode *params, ASTNode *body, int line, int col);
 ASTNode *ast_create_param(DataType dt, const char *name, int line, int col);
-ASTNode *ast_create_struct_decl(const char *name, ASTNode *members, int line, int col);
 
 ASTNode *ast_create_block(ASTNode *statements, int line, int col);
 ASTNode *ast_create_expr_stmt(ASTNode *expr, int line, int col);
 ASTNode *ast_create_if(ASTNode *cond, ASTNode *then_branch, ASTNode *else_branch, int line, int col);
 ASTNode *ast_create_while(ASTNode *cond, ASTNode *body, int line, int col);
 ASTNode *ast_create_for(ASTNode *init, ASTNode *cond, ASTNode *step, ASTNode *body, int line, int col);
-ASTNode *ast_create_switch(ASTNode *expr, ASTNode *body, int line, int col);
-ASTNode *ast_create_case(ASTNode *expr, ASTNode *stmt, int line, int col);
-ASTNode *ast_create_default(ASTNode *stmt, int line, int col);
 ASTNode *ast_create_break(int line, int col);
 ASTNode *ast_create_continue(int line, int col);
 ASTNode *ast_create_return(ASTNode *expr, int line, int col);
@@ -130,7 +118,6 @@ ASTNode *ast_create_un_op(int op, ASTNode *operand, int line, int col);
 ASTNode *ast_create_assign(int op, ASTNode *target, ASTNode *expr, int line, int col);
 ASTNode *ast_create_call(const char *callee_name, ASTNode *args, int line, int col);
 ASTNode *ast_create_array_access(ASTNode *array, ASTNode *index, int line, int col);
-ASTNode *ast_create_member_access(ASTNode *object, const char *member, int line, int col);
 
 ASTNode *ast_create_identifier(const char *name, int line, int col);
 ASTNode *ast_create_lit_int(int val, int line, int col);

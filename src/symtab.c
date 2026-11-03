@@ -103,22 +103,8 @@ Symbol *symtab_insert_func(Scope *scope, const char *name, DataType ret_type, in
         sym->param_types = (DataType *)calloc(param_count, sizeof(DataType));
         for (int i = 0; i < param_count; i++) {
             sym->param_types[i] = param_types[i];
-            if (param_types[i].base == TYPE_STRUCT && param_types[i].struct_name) {
-                sym->param_types[i].struct_name = strdup(param_types[i].struct_name);
-            }
         }
     }
-    return symtab_insert(scope, sym);
-}
-
-Symbol *symtab_insert_struct(Scope *scope, const char *name, Scope *members, int line, int col) {
-    Symbol *sym = (Symbol *)calloc(1, sizeof(Symbol));
-    sym->name = strdup(name);
-    sym->kind = SYM_STRUCT;
-    sym->type = data_type_struct(name);
-    sym->struct_scope = members;
-    sym->line = line;
-    sym->column = col;
     return symtab_insert(scope, sym);
 }
 
@@ -147,10 +133,6 @@ Symbol *symtab_lookup(const Scope *scope, const char *name) {
     return NULL;
 }
 
-Symbol *symtab_lookup_member(const Scope *struct_scope, const char *member_name) {
-    return symtab_lookup_local(struct_scope, member_name);
-}
-
 /*
  * Visualização formatada da tabela de símbolos
  */
@@ -165,7 +147,6 @@ static const char *symbol_kind_to_string(SymbolKind kind) {
         case SYM_VAR:    return "VAR";
         case SYM_PARAM:  return "PARAM";
         case SYM_FUNC:   return "FUNC";
-        case SYM_STRUCT: return "STRUCT";
         default:         return "UNKNOWN";
     }
 }
@@ -187,16 +168,6 @@ void symtab_print(const Scope *scope, int indent) {
                        data_type_to_string(&sym->return_type),
                        sym->param_count,
                        sym->line);
-            } else if (sym->kind == SYM_STRUCT) {
-                printf("[%s] %s (Linha: %d)\n",
-                       symbol_kind_to_string(sym->kind),
-                       sym->name,
-                       sym->line);
-                if (sym->struct_scope) {
-                    print_indent(indent + 2);
-                    printf("Membros:\n");
-                    symtab_print(sym->struct_scope, indent + 3);
-                }
             } else {
                 printf("[%s] %s : %s (Linha: %d)\n",
                        symbol_kind_to_string(sym->kind),
@@ -226,20 +197,8 @@ void symtab_free(Scope *scope) {
             Symbol *next = sym->next;
 
             if (sym->name) free(sym->name);
-            if (sym->type.struct_name) free(sym->type.struct_name);
-            if (sym->return_type.struct_name) free(sym->return_type.struct_name);
-
             if (sym->param_types) {
-                for (int p = 0; p < sym->param_count; p++) {
-                    if (sym->param_types[p].struct_name) {
-                        free(sym->param_types[p].struct_name);
-                    }
-                }
                 free(sym->param_types);
-            }
-
-            if (sym->struct_scope) {
-                symtab_free(sym->struct_scope);
             }
 
             free(sym);

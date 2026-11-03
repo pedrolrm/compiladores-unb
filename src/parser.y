@@ -12,12 +12,6 @@ void yyerror(const char *s);
 
 %code requires {
 #include "ast.h"
-
-/* Estrutura intermediária para especificadores de tipo */
-typedef struct {
-    DataType dt;
-    ASTNode *struct_decl;
-} TypeSpec;
 }
 
 /* Habilita o rastreamento automático de linhas e colunas (YYLTYPE) */
@@ -30,7 +24,7 @@ typedef struct {
     char charval;
     char *strval;
     ASTNode *node;
-    TypeSpec typespec;
+    DataType dt;
 }
 
 /* ========================================================================= */
@@ -41,7 +35,7 @@ typedef struct {
 %token KW_INT KW_FLOAT KW_CHAR KW_VOID
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_RETURN
 
-/* Controle de fluxo e seleção */
+/* Controle de fluxo e seleção (tokens preservados no scanner) */
 %token KW_BREAK KW_CONTINUE KW_SWITCH KW_CASE KW_DEFAULT
 
 /* Tipos e modificadores extras */
@@ -75,7 +69,7 @@ typedef struct {
 %token DELIM_LBRACE DELIM_RBRACE
 %token DELIM_LBRACKET DELIM_RBRACKET
 %token DELIM_SEMICOLON DELIM_COMMA
-%token DELIM_DOT                     /* '.' acesso a campo de struct */
+%token DELIM_DOT
 
 /* Token genérico de erro (caso haja caractere inválido) */
 %token TOKEN_ERROR
@@ -86,13 +80,13 @@ typedef struct {
 %type <node> program statement function_definition
 %type <node> parameter_list_opt parameter_list parameter
 %type <node> compound_statement statement_list
-%type <node> selection_statement labeled_statement
+%type <node> selection_statement
 %type <node> iteration_statement for_init expression_opt
-%type <node> jump_statement declaration struct_declaration_list
+%type <node> jump_statement declaration
 %type <node> init_declarator_list init_declarator declarator
 %type <node> expression_statement expression postfix_expression primary_expression
 %type <node> argument_list_opt argument_list
-%type <typespec> type_specifier struct_specifier
+%type <dt> type_specifier
 
 /* ========================================================================= */
 /* PRECEDÊNCIA E ASSOCIATIVIDADE (menor -> maior precedência)                 */
@@ -138,7 +132,6 @@ statement
     | compound_statement   { $$ = $1; }
     | selection_statement  { $$ = $1; }
     | iteration_statement  { $$ = $1; }
-    | labeled_statement    { $$ = $1; }
     | jump_statement       { $$ = $1; }
     ;
 
@@ -147,7 +140,7 @@ statement
 /* ------------------------------------------------------------------------- */
 function_definition
     : type_specifier IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement {
-        $$ = ast_create_func_def($1.dt, $2, $4, $6, @2.first_line, @2.first_column);
+        $$ = ast_create_func_def($1, $2, $4, $6, @2.first_line, @2.first_column);
         free($2);
     }
     | KW_VOID IDENTIFIER DELIM_LPAREN parameter_list_opt DELIM_RPAREN compound_statement {
@@ -171,7 +164,7 @@ parameter_list
 
 parameter
     : type_specifier IDENTIFIER {
-        $$ = ast_create_param($1.dt, $2, @2.first_line, @2.first_column);
+        $$ = ast_create_param($1, $2, @2.first_line, @2.first_column);
         free($2);
     }
     ;
@@ -200,7 +193,7 @@ statement_list
     ;
 
 /* ------------------------------------------------------------------------- */
-/* Seleção: if / if-else (com dangling else) e switch.                        */
+/* Seleção: if / if-else (com dangling else).                                 */
 /* ------------------------------------------------------------------------- */
 selection_statement
     : KW_IF DELIM_LPAREN expression DELIM_RPAREN statement %prec LOWER_THAN_ELSE {
@@ -208,19 +201,6 @@ selection_statement
     }
     | KW_IF DELIM_LPAREN expression DELIM_RPAREN statement KW_ELSE statement {
         $$ = ast_create_if($3, $5, $7, @1.first_line, @1.first_column);
-    }
-    | KW_SWITCH DELIM_LPAREN expression DELIM_RPAREN statement {
-        $$ = ast_create_switch($3, $5, @1.first_line, @1.first_column);
-    }
-    ;
-
-/* Rótulos do switch (case/default) tratados como labeled statements. */
-labeled_statement
-    : KW_CASE expression OP_COLON statement {
-        $$ = ast_create_case($2, $4, @1.first_line, @1.first_column);
-    }
-    | KW_DEFAULT OP_COLON statement {
-        $$ = ast_create_default($3, @1.first_line, @1.first_column);
     }
     ;
 
@@ -247,7 +227,7 @@ expression_opt
     ;
 
 /* ------------------------------------------------------------------------- */
-/* Desvios de fluxo em laços e switch.                                        */
+/* Desvios de fluxo em laços.                                                 */
 /* ------------------------------------------------------------------------- */
 jump_statement
     : KW_BREAK DELIM_SEMICOLON {
@@ -262,88 +242,31 @@ jump_statement
     ;
 
 /* ------------------------------------------------------------------------- */
-/* Declarações de variáveis e structs                                         */
+/* Declarações de variáveis                                                  */
 /* ------------------------------------------------------------------------- */
 declaration
     : type_specifier init_declarator_list DELIM_SEMICOLON {
         ASTNode *curr = $2;
         while (curr) {
-            curr->data_type.base = $1.dt.base;
-            if ($1.dt.base == TYPE_STRUCT && $1.dt.struct_name) {
-                curr->data_type.struct_name = strdup($1.dt.struct_name);
-            }
+            curr->data_type.base = $1.base;
             curr = curr->next;
         }
-        if ($1.struct_decl) {
-            $$ = ast_append_sibling($1.struct_decl, $2);
-        } else {
-            $$ = $2;
-        }
-    }
-    | type_specifier DELIM_SEMICOLON {
-        if ($1.struct_decl) {
-            $$ = $1.struct_decl;
-        } else {
-            $$ = NULL;
-        }
+        $$ = $2;
     }
     ;
 
 type_specifier
     : KW_INT {
-        TypeSpec ts;
-        ts.dt = data_type_primitive(TYPE_INT);
-        ts.struct_decl = NULL;
-        $$ = ts;
+        $$ = data_type_primitive(TYPE_INT);
     }
     | KW_FLOAT {
-        TypeSpec ts;
-        ts.dt = data_type_primitive(TYPE_FLOAT);
-        ts.struct_decl = NULL;
-        $$ = ts;
+        $$ = data_type_primitive(TYPE_FLOAT);
     }
     | KW_CHAR {
-        TypeSpec ts;
-        ts.dt = data_type_primitive(TYPE_CHAR);
-        ts.struct_decl = NULL;
-        $$ = ts;
+        $$ = data_type_primitive(TYPE_CHAR);
     }
     | KW_BOOL {
-        TypeSpec ts;
-        ts.dt = data_type_primitive(TYPE_BOOL);
-        ts.struct_decl = NULL;
-        $$ = ts;
-    }
-    | struct_specifier {
-        $$ = $1;
-    }
-    ;
-
-struct_specifier
-    : KW_STRUCT IDENTIFIER DELIM_LBRACE struct_declaration_list DELIM_RBRACE {
-        TypeSpec ts;
-        ts.dt = data_type_struct($2);
-        ts.struct_decl = ast_create_struct_decl($2, $4, @1.first_line, @1.first_column);
-        free($2);
-        $$ = ts;
-    }
-    | KW_STRUCT IDENTIFIER {
-        TypeSpec ts;
-        ts.dt = data_type_struct($2);
-        ts.struct_decl = NULL;
-        free($2);
-        $$ = ts;
-    }
-    ;
-
-struct_declaration_list
-    : declaration { $$ = $1; }
-    | struct_declaration_list declaration {
-        if ($2) {
-            $$ = ast_append_sibling($1, $2);
-        } else {
-            $$ = $1;
-        }
+        $$ = data_type_primitive(TYPE_BOOL);
     }
     ;
 
@@ -362,24 +285,28 @@ init_declarator
     }
     ;
 
-/* Declarador com dimensões de array opcionais (ex.: v[10], m[3][4], buf[]). */
+/* Declarador escalar ou vetor 1D */
 declarator
     : IDENTIFIER {
         $$ = ast_create_var_decl(data_type_primitive(TYPE_UNKNOWN), $1, NULL, @1.first_line, @1.first_column);
         free($1);
     }
-    | declarator DELIM_LBRACKET expression DELIM_RBRACKET {
-        $1->data_type.is_array = true;
+    | IDENTIFIER DELIM_LBRACKET expression DELIM_RBRACKET {
+        ASTNode *decl = ast_create_var_decl(data_type_primitive(TYPE_UNKNOWN), $1, NULL, @1.first_line, @1.first_column);
+        decl->data_type.is_array = true;
         if ($3 && $3->type == AST_LIT_INT) {
-            $1->data_type.array_size = $3->int_val;
+            decl->data_type.array_size = $3->int_val;
         }
         ast_free($3);
-        $$ = $1;
+        free($1);
+        $$ = decl;
     }
-    | declarator DELIM_LBRACKET DELIM_RBRACKET {
-        $1->data_type.is_array = true;
-        $1->data_type.array_size = 0;
-        $$ = $1;
+    | IDENTIFIER DELIM_LBRACKET DELIM_RBRACKET {
+        ASTNode *decl = ast_create_var_decl(data_type_primitive(TYPE_UNKNOWN), $1, NULL, @1.first_line, @1.first_column);
+        decl->data_type.is_array = true;
+        decl->data_type.array_size = 0;
+        free($1);
+        $$ = decl;
     }
     ;
 
@@ -464,15 +391,11 @@ expression
     }
     ;
 
-/* Pós-fixados: indexação de array e acesso a campo de struct */
+/* Pós-fixados: indexação de array */
 postfix_expression
     : primary_expression { $$ = $1; }
     | postfix_expression DELIM_LBRACKET expression DELIM_RBRACKET {
         $$ = ast_create_array_access($1, $3, @2.first_line, @2.first_column);
-    }
-    | postfix_expression DELIM_DOT IDENTIFIER {
-        $$ = ast_create_member_access($1, $3, @2.first_line, @2.first_column);
-        free($3);
     }
     ;
 

@@ -12,8 +12,7 @@
 typedef enum {
     SYM_VAR,
     SYM_PARAM,
-    SYM_FUNC,
-    SYM_STRUCT
+    SYM_FUNC
 } SymbolKind;
 
 struct Scope;
@@ -33,9 +32,6 @@ typedef struct Symbol {
     DataType return_type;
     int param_count;
     DataType *param_types;
-
-    /* Metadados para structs (escopo interno com seus campos) */
-    struct Scope *struct_scope;
 
     struct Symbol *next;    /* Encadeamento para colisões na tabela hash */
 } Symbol;
@@ -65,11 +61,9 @@ Symbol *symtab_insert(Scope *scope, Symbol *sym);
 Symbol *symtab_insert_var(Scope *scope, const char *name, DataType type, int line, int col);
 Symbol *symtab_insert_param(Scope *scope, const char *name, DataType type, int line, int col);
 Symbol *symtab_insert_func(Scope *scope, const char *name, DataType ret_type, int param_count, DataType *param_types, int line, int col);
-Symbol *symtab_insert_struct(Scope *scope, const char *name, Scope *members, int line, int col);
 
 Symbol *symtab_lookup(const Scope *scope, const char *name);
 Symbol *symtab_lookup_local(const Scope *scope, const char *name);
-Symbol *symtab_lookup_member(const Scope *struct_scope, const char *member_name);
 
 /* Visualização */
 void symtab_print(const Scope *scope, int indent);

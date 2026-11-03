@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Suíte de Testes Automatizados para a Árvore Sintática Abstrata (AST)
-Compiladores - UnB
+Compiladores - UnB (Escopo Simplificado)
 """
 
 import os
@@ -60,14 +60,9 @@ def main():
             "Definição de Função com Parâmetros e Return"
         ),
         (
-            "struct Ponto { int x; int y; }; void f() { struct Ponto p; p.x = 42; }",
-            ["StructDecl: Ponto", "Members:", "VarDecl: x (Type: int)", "VarDecl: y (Type: int)", "VarDecl: p (Type: struct Ponto)", "MemberAccess (.x)", "LiteralInt: 42"],
-            "Declaração de Struct e Acesso a Campo (.x)"
-        ),
-        (
             "int main() { int v[10]; v[3] = 99; }",
             ["VarDecl: v (Type: int[10])", "ArrayAccess", "Base:", "Identifier: v", "Index:", "LiteralInt: 3", "LiteralInt: 99"],
-            "Declaração de Array e Indexação (v[3])"
+            "Declaração de Vetor 1D e Indexação (v[3])"
         ),
         (
             "void teste() { if (x > 0) { x = 1; } else { x = 2; } while (x < 10) { x += 1; if (x == 5) break; } }",
@@ -75,9 +70,14 @@ def main():
             "Estruturas de Controle de Fluxo (if-else, while, break)"
         ),
         (
-            "void teste_switch(int op) { switch (op) { case 1: return 10; default: return 0; } }",
-            ["Switch", "Case", "LiteralInt: 1", "Default"],
-            "Comando Switch e Rótulos Case/Default"
+            "void teste_for() { for (int i = 0; i < 10; i += 1) { continue; } }",
+            ["For", "Init:", "VarDecl: i (Type: int)", "Cond:", "BinOp: <", "Step / Body:", "Assign: +=", "Continue"],
+            "Laço For Estruturado com Inicialização e Passo"
+        ),
+        (
+            "bool checa(bool a, bool b) { return !a && (b || false); }",
+            ["FuncDef: checa (Return: bool)", "BinOp: &&", "UnOp: !", "BinOp: ||", "LiteralBool: false"],
+            "Expressões Lógicas e Booleanas na AST (!, &&, ||)"
         )
     ]
 
