@@ -158,26 +158,53 @@ static void check_node(ASTNode *node) {
             check_node(node->left);
             break;
 
-        case AST_IF:
+        case AST_IF: {
             check_node(node->left);
+
+            DataType *t = &node->left->data_type;
+            bool tipo_valido = !t->is_array && (t->base ==TYPE_INT || t->base == TYPE_FLOAT||t->base == TYPE_BOOL);
+
+
+            if (t->base != TYPE_UNKNOWN && !tipo_valido) {
+                report_semantic_error(node->left->line, node->left->column,  "condição do comando 'if' deve ser do tipo int, float ou bool");
+            }
+
             check_node(node->right);
             if (node->extra) {
                 check_node(node->extra);
             }
             break;
+        }
 
-        case AST_WHILE:
+        case AST_WHILE: {
             loop_depth++;
             check_node(node->left);
+            DataType *t = &node->left->data_type;
+            bool tipo_valido = !t->is_array && (t->base ==TYPE_INT || t->base == TYPE_FLOAT||t->base == TYPE_BOOL);
+
+
+            if (t->base != TYPE_UNKNOWN && !tipo_valido) {
+                report_semantic_error(node->left->line, node->left->column,  "condição do comando 'while' deve ser do tipo int, float ou bool");
+            }
             check_node(node->right);
             loop_depth--;
             break;
+        }
 
         case AST_FOR: {
             current_scope = symtab_enter_scope(current_scope);
             loop_depth++;
             check_node(node->left);  /* init */
+            
             check_node(node->right); /* cond */
+            if (node->right) {
+                DataType *t = &node->right->data_type;
+                bool tipo_valido = !t->is_array && (t->base == TYPE_INT || t->base == TYPE_FLOAT || t->base == TYPE_BOOL);
+
+                if (t->base != TYPE_UNKNOWN && !tipo_valido) {
+                    report_semantic_error(node->right->line, node->right->column, "condição do comando 'for' deve ser do tipo int, float ou bool");
+                }
+            }
             check_node(node->extra); /* step e body */
             loop_depth--;
             current_scope = symtab_exit_scope(current_scope);

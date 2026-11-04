@@ -195,6 +195,48 @@ def main():
             False,
             "indexação '[]' aplicada em variável que não é array",
             "Erro: Indexação em Variável Escalar Não-Array"
+        ),
+        (
+            "void f() {} int main() { if (f()) {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em If"
+        ),
+        (
+            "int main() { int a = 1; if (a > 0) {} return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em If"
+        ),
+        (
+            "void f() {} int main() { while (f()) {} return 0; }",
+            False,
+            "condição do comando 'while' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em While"
+        ),
+        (
+            "int main() { while (true) { break; } return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em While"
+        ),
+        (
+            "void f() {} int main() { for (;f();) {} return 0; }",
+            False,
+            "condição do comando 'for' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em For"
+        ),
+        (
+            "int main() { for (int i = 0; i < 3; i += 1) {} return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em For"
+        ),
+        (
+            "int main() { for (;;) { break; } return 0; }",
+            True,
+            None,
+            "For Sem Condição Não Gera Erro"
         )
     ]
 
