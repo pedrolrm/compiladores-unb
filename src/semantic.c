@@ -44,6 +44,46 @@ static bool is_literal_zero(const ASTNode *n) {
     }
     return false;
 }
+
+/*
+ * Análise de Fluxo de Controle (Control Flow Analysis):
+ * Verifica recursivamente se todos os caminhos de execução possíveis terminam
+ * em um nó AST_RETURN com expressão válida:
+ * - Em comandos sequenciais / blocos: percorre as instruções e um return
+ *   no fluxo principal satisfaz a condição.
+ * - Em seleções (AST_IF): ambos os ramos (then e else) devem conter retornos garantidos;
+ *   if sem else não garante retorno.
+ */
+bool has_guaranteed_return(ASTNode *body) {
+    if (!body) return false;
+
+    switch (body->type) {
+        case AST_RETURN:
+            return body->left != NULL;
+
+        case AST_BLOCK: {
+            ASTNode *stmt = body->left;
+            while (stmt) {
+                if (has_guaranteed_return(stmt)) {
+                    return true;
+                }
+                stmt = stmt->next;
+            }
+            return false;
+        }
+
+        case AST_IF: {
+            if (!body->extra) {
+                return false; /* if sem else não garante retorno */
+            }
+            return has_guaranteed_return(body->right) && has_guaranteed_return(body->extra);
+        }
+
+        default:
+            return false;
+    }
+}
+
 static void check_node(ASTNode *node);
 
 /*
@@ -148,6 +188,15 @@ static void check_node(ASTNode *node) {
 
             /* Analisa corpo da função */
             check_node(node->right);
+
+            /* Análise de fluxo de controle: retorno obrigatório em funções não-void */
+            if (node->data_type.base != TYPE_VOID && node->data_type.base != TYPE_UNKNOWN) {
+                if (!has_guaranteed_return(node->right)) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "função '%s' com retorno não-void sem comando 'return' garantido em todos os caminhos", node->name);
+                    report_semantic_error(node->line, node->column, msg);
+                }
+            }
 
             /* Fecha escopo da função */
             current_scope = symtab_exit_scope(current_scope);
