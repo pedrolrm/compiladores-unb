@@ -1,3 +1,4 @@
+
 #include "semantic.h"
 #include "parser.tab.h"
 #include <string.h>
@@ -322,6 +323,16 @@ static void check_node(ASTNode *node) {
             break;
 
         case AST_ASSIGN: {
+            /* Alteração #73: validação do destino (l-value). */
+            if (node->left->type != AST_IDENTIFIER &&
+                node->left->type != AST_ARRAY_ACCESS) {
+                report_semantic_error(
+                    node->line,
+                    node->column,
+                    "lado esquerdo da atribuição não é um l-value válido"
+                );
+            }
+
             check_node(node->left);
             check_node(node->right);
 
