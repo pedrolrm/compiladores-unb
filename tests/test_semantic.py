@@ -237,6 +237,150 @@ def main():
             True,
             None,
             "For Sem Condição Não Gera Erro"
+        ),
+        (
+            "int main() { int x = 5.0 % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Float à Esquerda"
+        ),
+        (
+            "int main() { int x = 5 % 2.0; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Float à Direita"
+        ),
+        (
+            "int main() { float a = 1.0; int b = 2; float c = a % b; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Variável Float"
+        ),
+        (
+            "int main() { int x = true % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Bool"
+        ),
+        (
+            "int main() { int x = 'a' % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Char"
+        ),
+        (
+            "int main() { int v[2]; int x = v % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Array"
+        ),
+        (
+            "int main() { int x = 7 % 2; return 0; }",
+            True,
+            None,
+            "Módulo Entre Inteiros"
+        ),
+        (
+            "int main() { bool b = 7 % 2; return 0; }",
+            False,
+            "tipo incompatível na inicialização da variável 'b'",
+            "Erro: Resultado do Módulo é Int"
+        ),
+        (
+            "int main() { int x = 1 / 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Inteiro"
+        ),
+        (
+            "int main() { float y = 1.0 / 0.0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Float"
+        ),
+        (
+            "int main() { int x = 1 % 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Módulo Por Zero"
+        ),
+        (
+            "int main() { int x = 1 / (0); return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Com Parênteses"
+        ),
+        (
+            "int main() { int x = 4; x /= 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Atribuição Composta Por Zero"
+        ),
+        (
+            "int main() { int x = 1 / 2; return 0; }",
+            True,
+            None,
+            "Divisão Por Literal Não Zero"
+        ),
+        (
+            "int main() { float y = 1.0 / 0.5; return 0; }",
+            True,
+            None,
+            "Divisão Por Float Não Zero"
+        ),
+        (
+            "int main() { int x = 0 / 5; return 0; }",
+            True,
+            None,
+            "Zero Como Dividendo"
+        ),
+        (
+            "int main() { int z = 0; int x = 1 / z; return 0; }",
+            True,
+            None,
+            "Divisão Por Variável Não É Detectada"
+        ),
+        (
+            "int main() { int x = 1 * 0; return 0; }",
+            True,
+            None,
+            "Multiplicação Por Zero"
+        ),
+        (
+            "int main() { int x = 4; x /= 2; return 0; }",
+            True,
+            None,
+            "Atribuição Composta Por Não Zero"
+        ),
+        (
+            "int main() { int v[5]; if (v) {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Array Como Condição"
+        ),
+        (
+            "int main() { if (\"abc\") {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: String Como Condição"
+        ),
+        (
+            "int main() { if ('a') {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Char Como Condição"
+        ),
+        (
+            "int main() { float b = 1.0; if (b) {} return 0; }",
+            True,
+            None,
+            "Condição Float Válida"
+        ),
+        (
+            "int main() { int a = 1; if (a) {} return 0; }",
+            True,
+            None,
+            "Condição Int Válida"
         )
     ]
 
