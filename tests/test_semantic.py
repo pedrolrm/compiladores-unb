@@ -316,6 +316,38 @@ def main():
             "Erro: Indexação em Variável Escalar Não-Array"
         ),
 
+        # Testes de validação de vetores (#77)
+        (
+            "int main() { int v[0]; return 0; }",
+            False,
+            "deve ser maior que zero",
+            "Erro: Tamanho de Vetor Zero"
+        ),
+        (
+            "int main() { int v[-5]; return 0; }",
+            False,
+            "deve ser maior que zero",
+            "Erro: Tamanho de Vetor Negativo"
+        ),
+        (
+            "int main() { int v[5]; v[10] = 1; return 0; }",
+            False,
+            "fora dos limites",
+            "Erro: Índice de Array Fora dos Limites"
+        ),
+        (
+            "int main() { int v[5]; v[4] = 1; return 0; }",
+            True,
+            None,
+            "Válido: Acesso ao Último Índice Válido do Vetor"
+        ),
+        (
+            "int main() { char s[] = \"oi\"; return 0; }",
+            True,
+            None,
+            "Válido: Vetor de Tamanho Inferido por Inicializador"
+        ),
+
         # Novos testes: subissue #73
         # Rejeição de l-values inválidos
         (
