@@ -206,7 +206,7 @@ O projeto conta com suítes de testes automatizadas em Python cobrindo todos os 
 
 - **Testes Léxicos**: `tests/run_tests.py` (11 testes)
 - **Testes da AST**: `tests/test_ast.py` (6 testes)
-- **Testes Semânticos**: `tests/test_semantic.py` (44 testes)
+- **Testes Semânticos**: `tests/test_semantic.py` (50 testes)
 
 Para rodar toda a bateria de testes:
 ```bash

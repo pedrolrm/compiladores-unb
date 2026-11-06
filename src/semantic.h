@@ -18,4 +18,11 @@ int semantic_analyze(ASTNode *root, Scope **out_global_scope);
  */
 void report_semantic_error(int line, int col, const char *msg);
 
+/*
+ * Análise de Fluxo de Controle (Control Flow Analysis):
+ * Verifica recursivamente se todos os caminhos de execução na AST de um comando/bloco
+ * terminam garantidamente em um comando return com expressão válida.
+ */
+bool has_guaranteed_return(ASTNode *body);
+
 #endif /* SEMANTIC_H */

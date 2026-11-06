@@ -525,6 +525,69 @@ def main():
             True,
             None,
             "Condição Int Válida"
+        ),
+
+        # Testes de retorno obrigatório (#76)
+        (
+            "int func_sem_retorno() { int a = 1; } int main() { return func_sem_retorno(); }",
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void Sem Comando 'return'"
+        ),
+        (
+            """
+            int func_if_sem_else(int x) {
+                if (x > 0) {
+                    return x;
+                }
+            }
+            int main() {
+                return func_if_sem_else(10);
+            }
+            """,
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void com 'if' Sem 'else'"
+        ),
+        (
+            """
+            int func_else_incompleto(int x) {
+                if (x > 0) {
+                    return 1;
+                } else {
+                    x = 0;
+                }
+            }
+            int main() {
+                return func_else_incompleto(10);
+            }
+            """,
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void com Ramo 'else' Sem Retorno"
+        ),
+        (
+            """
+            int func_cadeia_sem_else(int x) {
+                if (x > 0) {
+                    return 1;
+                } else if (x < 0) {
+                    return -1;
+                }
+            }
+            int main() {
+                return func_cadeia_sem_else(0);
+            }
+            """,
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void com 'if-else-if' Sem 'else' Final"
+        ),
+        (
+            "int func_retorno_vazio() { return; } int main() { return func_retorno_vazio(); }",
+            False,
+            "função com retorno não-void requer expressão no 'return'",
+            "Erro: Retorno Sem Expressão em Função Não-Void"
         )
     ]
 
