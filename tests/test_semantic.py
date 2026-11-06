@@ -686,6 +686,191 @@ def main():
             False,
             "tipo de retorno da função 'main' deve ser 'int' ou 'void'",
             "Erro: Função 'main' com Tipo de Retorno 'bool'"
+        ),
+
+        # Bateria de Testes Abrangentes de Robustez e Casos de Borda
+        (
+            "int main() { int v[5]; v[-1] = 1; return 0; }",
+            False,
+            "fora dos limites",
+            "Erro: Índice de Array Negativo Literal (-1)"
+        ),
+        (
+            "int main() { int v[5]; v[-5] = 1; return 0; }",
+            False,
+            "fora dos limites",
+            "Erro: Índice de Array Negativo Menor (-5)"
+        ),
+        (
+            "int main() { int v[5]; v[5] = 1; return 0; }",
+            False,
+            "fora dos limites",
+            "Erro: Índice de Array Igual ao Tamanho (Off-by-one)"
+        ),
+        (
+            "int main() { int v[5]; int i = 2; v[i] = 1; return 0; }",
+            True,
+            None,
+            "Válido: Acesso com Variável no Índice de Vetor"
+        ),
+        (
+            '''int f(int n) { if (n <= 0) return 0; return g(n - 1); }
+            int g(int n) { return f(n); }
+            int main() { return f(3); }''',
+            True,
+            None,
+            "Válido: Recursão Mútua (Forward Reference entre Funções)"
+        ),
+        (
+            '''int avalia(int x, int y) {
+                if (x > 0) {
+                    if (y > 0) { return 1; }
+                    else { return 2; }
+                } else {
+                    if (y > 0) { return 3; }
+                    else { return 4; }
+                }
+            }
+            int main() { return avalia(1, 1); }''',
+            True,
+            None,
+            "Válido: Retorno Completo em If-Else Aninhados Profundamente"
+        ),
+        (
+            '''int avalia(int x, int y) {
+                if (x > 0) {
+                    if (y > 0) { return 1; }
+                    else { return 2; }
+                } else {
+                    if (y > 0) { return 3; }
+                }
+            }
+            int main() { return avalia(1, 1); }''',
+            False,
+            "sem comando 'return' garantido",
+            "Erro: Retorno Faltante em Ramo Profundo de If-Else Aninhado"
+        ),
+        (
+            "int loop_ret(int a) { while (a > 0) { return 1; } } int main() { return loop_ret(2); }",
+            False,
+            "sem comando 'return' garantido",
+            "Erro: Função Não-Void Apenas com Retorno Dentro de While"
+        ),
+        (
+            "int loop_for(int n) { for (int i = 0; i < n; i += 1) { return i; } } int main() { return loop_for(2); }",
+            False,
+            "sem comando 'return' garantido",
+            "Erro: Função Não-Void Apenas com Retorno Dentro de For"
+        ),
+        (
+            "int soma_ate(int n) { int s = 0; for (int i = 0; i < n; i += 1) { s += i; } return s; } int main() { return soma_ate(5); }",
+            True,
+            None,
+            "Válido: Função Não-Void com Retorno Garantido Após Laço"
+        ),
+        (
+            "int g = 100; int main() { int g = 200; return g; }",
+            True,
+            None,
+            "Válido: Sombreamento de Variável Global por Variável Local"
+        ),
+        (
+            "int main() { 10.5 = 2.0; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Literal Float"
+        ),
+        (
+            "int main() { 'c' = 'd'; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Literal Char"
+        ),
+        (
+            'int main() { "msg" = "abc"; return 0; }',
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Literal String"
+        ),
+        (
+            "int f() { return 0; } int main() { f() += 5; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição Composta a Chamada de Função"
+        ),
+        (
+            "int main() { float f = 10.5; f /= 0.0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão por Zero em Atribuição Composta com Float"
+        ),
+        (
+            "int main() { int x = 3.14; return 0; }",
+            False,
+            "tipo incompatível na inicialização da variável 'x'",
+            "Erro: Atribuição de Float para Int Sem Cast Explícito"
+        ),
+        (
+            "int main() { int a = 5; float b = 2.5; float c = a + b; return 0; }",
+            True,
+            None,
+            "Válido: Coerção Aritmética de Int para Float em Expressão"
+        ),
+        (
+            "void logica(int a) { if (a < 0) { return; } a += 1; } int main() { logica(5); return 0; }",
+            True,
+            None,
+            "Válido: Função Void com Retorno Vazio Válido em Bloco Condicional"
+        ),
+        (
+            '''int fat(int n) {
+                if (n <= 1) {
+                    return 1;
+                } else {
+                    return n * fat(n - 1);
+                }
+            }
+            int main() { return fat(5); }''',
+            True,
+            None,
+            "Válido: Função Fatorial Recursiva Completa"
+        ),
+        (
+            '''int fib(int n) {
+                if (n <= 0) {
+                    return 0;
+                } else {
+                    if (n == 1) {
+                        return 1;
+                    } else {
+                        return fib(n - 1) + fib(n - 2);
+                    }
+                }
+            }
+            int main() { return fib(6); }''',
+            True,
+            None,
+            "Válido: Função Fibonacci Recursiva Completa"
+        ),
+        (
+            '''int busca(int n, int chave) {
+                int dados[5];
+                dados[0] = 10; dados[1] = 20; dados[2] = 30; dados[3] = 40; dados[4] = 50;
+                int pos = -1;
+                for (int i = 0; i < n; i += 1) {
+                    if (dados[i] == chave) {
+                        pos = i;
+                        break;
+                    }
+                }
+                return pos;
+            }
+            int main() {
+                return busca(5, 30);
+            }''',
+            True,
+            None,
+            "Válido: Algoritmo de Busca Linear em Vetor com Laço For e Break"
         )
     ]
 

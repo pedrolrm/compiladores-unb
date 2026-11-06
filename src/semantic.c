@@ -374,9 +374,9 @@ static void check_node(ASTNode *node) {
 
             /* Checagem estática de limites: só é possível quando o índice é um
              * literal e o tamanho do vetor é conhecido em tempo de compilação */
+            int idx = 0;
             if (node->left->data_type.is_array && node->left->data_type.array_size > 0 &&
-                node->right->type == AST_LIT_INT) {
-                int idx = node->right->int_val;
+                ast_literal_int_value(node->right, &idx)) {
                 if (idx < 0 || idx >= node->left->data_type.array_size) {
                     char msg[128];
                     snprintf(msg, sizeof(msg),
