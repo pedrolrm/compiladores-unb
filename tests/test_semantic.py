@@ -210,6 +210,36 @@ def main():
             None,
             "Escopos Independentes em Funções Distintas com Variável Global"
         ),
+        (
+            """
+            void main() {
+                int a = 10;
+            }
+            """,
+            True,
+            None,
+            "Ponto de Entrada com 'void main()' Permitido"
+        ),
+        (
+            """
+            void main() {
+                return;
+            }
+            """,
+            True,
+            None,
+            "Ponto de Entrada com 'void main()' e Return Vazio Permitido"
+        ),
+        (
+            """
+            int main(int argc) {
+                return argc;
+            }
+            """,
+            True,
+            None,
+            "Ponto de Entrada 'int main(int argc)' com Parâmetros Permitido"
+        ),
 
         # Casos de erro semântico existentes
         (
@@ -588,6 +618,42 @@ def main():
             False,
             "função com retorno não-void requer expressão no 'return'",
             "Erro: Retorno Sem Expressão em Função Não-Void"
+        ),
+
+        # Testes de verificação da função main (#78)
+        (
+            """
+            int soma(int a, int b) {
+                return a + b;
+            }
+            """,
+            False,
+            "função 'main' não declarada no escopo global",
+            "Erro: Programa Sem a Função 'main'"
+        ),
+        (
+            "int main = 10;",
+            False,
+            "o identificador 'main' deve ser uma função",
+            "Erro: 'main' Declarada Como Variável e Não Função"
+        ),
+        (
+            "float main() { return 1.5; }",
+            False,
+            "tipo de retorno da função 'main' deve ser 'int' ou 'void'",
+            "Erro: Função 'main' com Tipo de Retorno 'float'"
+        ),
+        (
+            "char main() { return 'a'; }",
+            False,
+            "tipo de retorno da função 'main' deve ser 'int' ou 'void'",
+            "Erro: Função 'main' com Tipo de Retorno 'char'"
+        ),
+        (
+            "bool main() { return true; }",
+            False,
+            "tipo de retorno da função 'main' deve ser 'int' ou 'void'",
+            "Erro: Função 'main' com Tipo de Retorno 'bool'"
         )
     ]
 
