@@ -15,14 +15,14 @@ flowchart TD
     C -->|Instanciação de Nós| D["Árvore Sintática Abstrata (AST)"]
     D --> E["Analisador Semântico (Visitor Pass)"]
     E <--> F["Tabela de Símbolos (Escopos Aninhados)"]
-    E -->|AST Validada| G["Futura Geração de Código (Python)"]
+    E -->|AST Validada| G["Geração de Código (Python 3)"]
 ```
 
 1. **Scanner (`src/scanner.l`)**: Realiza a análise léxica, emitindo tokens e rastreando posições de linha e coluna.
 2. **Parser (`src/parser.y`)**: Reconhece a sintaxe através da gramática livre de contexto e constrói a AST diretamente na memória.
 3. **AST (`src/ast.h`, `src/ast.c`)**: Estrutura em árvore que representa hierarquicamente o código-fonte livre de ruídos sintáticos (como `;`, parênteses ou delimitadores).
-4. **Tabela de Símbolos (`src/symtab.h`, `src/symtab.c`)**: Armazena os identificadores (variáveis, funções, structs e parâmetros) associados a tipos e níveis de escopo.
-5. **Analisador Semântico (`src/semantic.h`, `src/semantic.c`)**: Percorre a AST, popula e consulta a tabela de símbolos e aplica as checagens de escopo, tipos e fluxo.
+4. **Tabela de Símbolos (`src/symtab.h`, `src/symtab.c`)**: Armazena os identificadores (variáveis, funções e parâmetros) associados a tipos e níveis de escopo.
+5. **Analisador Semântico (`src/semantic.h`, `src/semantic.c`)**: Percorre a AST, popula e consulta a tabela de símbolos e aplica as checagens estáticas de tipos, escopo, fluxo de controle e ponto de entrada.
 
 ---
 
@@ -40,7 +40,7 @@ typedef struct ASTNode {
     DataType data_type;       /* Tipo de dado da declaração ou inferido na expressão */
 
     /* Valores literais e identificadores */
-    char *name;               /* Identificador, função, struct ou campo */
+    char *name;               /* Identificador ou nome de função */
     int int_val;              /* Literais inteiros e booleanos */
     float float_val;          /* Literais de ponto flutuante */
     char char_val;            /* Literais de caractere */
@@ -48,7 +48,7 @@ typedef struct ASTNode {
     int op;                   /* Código do operador (ex: OP_PLUS, OP_EQ) */
 
     /* Filhos estruturados */
-    struct ASTNode *left;     /* Filho esquerdo (condição, lado esquerdo de binop) */
+    struct ASTNode *left;     /* Filho esquerdo (condição, lado esquerdo de binop, inicializador) */
     struct ASTNode *right;    /* Filho direito (corpo then, lado direito de binop) */
     struct ASTNode *extra;    /* Terceiro filho (else em if, passo em for) */
 
@@ -88,7 +88,7 @@ expression
 ### 3.1 Gerenciamento de Escopos Aninhados
 
 A tabela organiza os identificadores em uma hierarquia de escopos em cadeia:
-- **Nível 0 (Global)**: Funções, structs e variáveis globais.
+- **Nível 0 (Global)**: Funções e variáveis globais.
 - **Nível 1 (Função)**: Parâmetros formais e corpo da função.
 - **Nível 2+ (Blocos Aninhados)**: Variáveis declaradas dentro de blocos `{}` em `if`, `while`, `for`.
 
@@ -111,27 +111,58 @@ typedef struct Scope {
 
 ---
 
-## 4. Análise Semântica e Verificação de Tipos
+## 4. Análise Semântica e Verificações Estáticas
 
 A análise semântica é realizada em duas passadas sobre a AST:
 
-1. **Passo 1 (Coleta de Declarações Globais)**:
-   - Registra no escopo global todas as assinaturas de funções.
-   - Permite que funções se chamem mutuamente em qualquer ordem de definição.
+### 4.1 Passo 1: Pré-coleta de Declarações Globais
+- Registra no escopo global todas as assinaturas de funções (`AST_FUNC_DEF`).
+- Permite que funções se chamem mutuamente em qualquer ordem no código-fonte (*forward references* e recursão mútua).
 
-2. **Passo 2 (Verificação Completa de Escopos e Tipos)**:
-   - **Resolução de Identificadores**: Garante que variáveis e funções acessadas foram previamente declaradas.
-   - **Checagem de Redeclarações e Shadowing**: Impede declaração duplicada no mesmo escopo e bloqueia sombreamento de variáveis dentro da mesma função.
-   - **Sistema de Tipos e Coerção**:
-     - Tipos idênticos são aceitos diretamente.
-     - Permite promoção implícita de `int` para `float` em atribuições e operações aritméticas mistas.
-     - Expressões relacionais e lógicas resultam estritamente no tipo `bool`.
-   - **Chamadas de Função**: Confere aridade (quantidade de argumentos) e tipos dos argumentos em relação aos parâmetros formais.
-   - **Arrays**: Valida se a base da indexação `[]` é um vetor e se o índice é do tipo inteiro.
-   - **Desvios de Fluxo**:
-     - `break`: permitido apenas dentro de laços de repetição (`while`, `for`).
-     - `continue`: permitido apenas dentro de laços de repetição.
-     - `return`: confere se o valor retornado é compatível com o tipo de retorno da função corrente (e rejeita retornos com valor em funções `void`).
+### 4.2 Passo 2: Verificações Semânticas e Sistema de Tipos
+
+1. **Resolução de Identificadores e Escopo**:
+   - Garante que variáveis e funções acessadas foram previamente declaradas.
+   - Bloqueia redeclaração no mesmo escopo.
+   - Bloqueia sombreamento (*shadowing*) de parâmetros ou variáveis locais dentro da função, mas permite que uma função declare variáveis locais homônimas a variáveis globais.
+
+2. **Validação de Destino de Atribuição (*L-Values*)**:
+   - Em comandos de atribuição simples (`=`) e composta (`+=`, `-=`, `*=`, `/=`), valida estritamente que o operando esquerdo seja um l-value modificável (`AST_IDENTIFIER` ou `AST_ARRAY_ACCESS`).
+   - Rejeita atribuições a literais (`10 = x`, `'c' = y`), chamadas de função (`f() = 1`) ou expressões aritméticas.
+
+3. **Validação de Tipos em Condições de Fluxo**:
+   - Nas estruturas `if`, `while` e `for`, a expressão condicional deve resultar estritamente em um tipo avaliável (`int`, `float` ou `bool`).
+   - Rejeita expressões `void`, arrays, strings ou caracteres como condições de controle.
+   - Laços `for` sem condição explícita (`for (;;; )`) são aceitos como laços infinitos válidos.
+
+4. **Segurança Aritmética e Divisão por Zero**:
+   - **Operador módulo (`%`)**: Restrito estritamente a operandos do tipo `int`. Rejeita operandos `float`, `bool`, `char` ou arrays.
+   - **Divisão por Zero**: Detecta estaticamente em tempo de compilação qualquer divisor literal nulo em operações `/` ou `%`, incluindo literais entre parênteses (`/(0)`) e atribuições compostas (`/=` por `0` ou `0.0`).
+
+5. **Sistema de Tipos e Coerção**:
+   - Tipos idênticos são aceitos diretamente.
+   - Permite promoção implícita de `int` para `float` em atribuições e operações aritméticas mistas.
+   - Operadores relacionais (`<`, `<=`, `>`, `>=`, `==`, `!=`) e lógicos (`&&`, `||`, `!`) produzem estritamente o tipo `bool`.
+
+6. **Validação Semântica de Vetores (1D)**:
+   - **Tamanho Declarado**: Na declaração de array (`int v[N]`), exige que $N$ seja um literal inteiro estritamente positivo ($N > 0$), rejeitando $N = 0$ ou $N < 0$.
+   - **Tamanho Inferido**: Vetores inicializados diretamente com literais string (`char s[] = "oi"`) têm tamanho válido inferido.
+   - **Tipo do Índice**: A indexação `v[expr]` exige que `expr` seja do tipo inteiro.
+   - **Checagem Estática de Limites**: Quando o índice for um literal inteiro constante (`AST_LIT_INT` ou literal negativo), valida se $0 \le \text{índice} < \text{tamanho}$, rejeitando acessos fora dos limites em tempo de compilação.
+
+7. **Análise de Fluxo de Controle e Retorno Obrigatório (*Control Flow Analysis*)**:
+   - Para funções com tipo de retorno diferente de `void` (`int`, `float`, `char`, `bool`), verifica recursivamente se **todos** os caminhos de execução possíveis terminam em um comando `return <expr>;`.
+   - Em estruturas `if-else`, ambos os ramos (*then* e *else*) devem conter retornos garantidos. Um `if` sem ramo `else` não satisfaz a garantia.
+   - Rejeita comandos `return <expr>;` (com valor) dentro de funções declaradas como `void`.
+   - Rejeita comandos `return;` (sem valor) dentro de funções não-void.
+
+8. **Verificação do Ponto de Entrada Canônico (`main`)**:
+   - Ao final da análise, consulta o escopo global garantindo a presença da função `main`.
+   - Rejeita programas que declaram `main` como variável escalar em vez de função (`SYM_FUNC`).
+   - Valida que a assinatura de retorno da função `main` seja estritamente compatível com o padrão C (`int` ou `void`).
+
+9. **Desvios de Repetição**:
+   - Garante que os comandos `break` e `continue` ocorram exclusivamente dentro de laços de repetição (`while`, `for`).
 
 ---
 
@@ -147,69 +178,18 @@ O executável `./compilador` oferece as seguintes opções:
 | `-t`, `--symbols` | Executa o Parser e a análise semântica, exibindo a Tabela de Símbolos hierárquica. |
 | `-c`, `--check` | Executa a validação sintática e semântica completa, retornando código `0` em caso de sucesso ou `1` se houver erros. |
 
-### Exemplo de Uso
-
-#### Visualização da AST:
-```bash
-./compilador --ast tests/example.c
-```
-*Saída gerada:*
-```text
-FuncDef: main (Return: int)
-  Body:
-    Block
-      VarDecl: salario (Type: float)
-        Init:
-          LiteralFloat: 1250.500000
-      VarDecl: letra (Type: char)
-        Init:
-          LiteralChar: 'A'
-      VarDecl: mensagem (Type: char[])
-        Init:
-          LiteralString: "Olá, Compiladores!"
-      If
-        Cond:
-          BinOp: >
-            Identifier: salario
-            LiteralFloat: 1000.000000
-        Then:
-          Block
-            ExprStmt
-              Assign: +=
-                Identifier: salario
-                LiteralFloat: 150.000000
-      Return
-        LiteralInt: 0
-```
-
-#### Visualização da Tabela de Símbolos:
-```bash
-./compilador --symbols tests/example.c
-```
-*Saída gerada:*
-```text
---- Escopo Nível 0 ---
-  [FUNC] main -> Retorno: int, Parâmetros: 0 (Linha: 2)
-  --- Escopo Nível 1 ---
-    --- Escopo Nível 2 ---
-      [VAR] letra : char (Linha: 4)
-      [VAR] salario : float (Linha: 3)
-      [VAR] mensagem : char[] (Linha: 5)
-      --- Escopo Nível 3 ---
-```
-
 ---
 
-## 6. Testes Automatizados
+## 6. Suíte de Testes Automatizados
 
-O projeto conta com suítes de testes automatizadas em Python cobrindo todos os módulos:
+O projeto conta com baterias completas de testes automatizados executáveis via Python:
 
-- **Testes Léxicos**: `tests/run_tests.py` (11 testes)
-- **Testes da AST**: `tests/test_ast.py` (6 testes)
-- **Testes Semânticos**: `tests/test_semantic.py` (50 testes)
+- **Testes Léxicos** (`tests/run_tests.py`): **11 testes** cobrindo literais, palavras-chave, comentários de linha/bloco, caracteres inválidos e casos de borda.
+- **Testes da AST** (`tests/test_ast.py`): **6 testes** validando a hierarquia sintática, precedência de operadores e estruturas de controle.
+- **Testes Semânticos** (`tests/test_semantic.py`): **93 testes** cobrindo l-values, escopos aninhados, restrições aritméticas, divisão por zero, análise de fluxo de retorno, limites de vetores e ponto de entrada `main`.
 
-Para rodar toda a bateria de testes:
+Para executar toda a bateria de testes integrados:
 ```bash
 make test
 ```
-Resultando em 30 testes aprovados (100% de sucesso).
+Resultando em **110 testes automatizados aprovados (100% de sucesso)**.

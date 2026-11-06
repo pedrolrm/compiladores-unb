@@ -1,27 +1,36 @@
 # Compiladores UnB
 
-Repositório destinado ao projeto da disciplina de Compiladores (UnB).
+Repositório destinado ao projeto da disciplina de Compiladores (Universidade de Brasília - UnB).
 
 ## Escopo e Definição do Projeto
 
-Este projeto consiste no desenvolvimento de um **Compilador** construído na linguagem **C**. O compilador terá como objetivo analisar e traduzir uma linguagem alvo (uma variação simplificada de C), com suporte aos seguintes recursos básicos:
-- Variáveis locais e globais (`int`, `float`, `char`, `bool`, etc).
-- Estruturas de controle de fluxo (`if`, `else`, `while`, `for`, `switch`).
-- Estruturas de dados complexas (`struct`, arrays).
-- Funções, retornos e chamadas recursivas.
+Este projeto consiste no desenvolvimento de um **Compilador/Transpilador** construído na linguagem **C**, com frontend gerado via **Flex** e **Bison**, tendo como objetivo traduzir um subconjunto estruturado da linguagem C para **Python 3**.
 
-O projeto é dividido em fases, correspondentes à pipeline tradicional de um compilador:
-1. **Analisador Léxico (Scanner):** Identificação de Tokens (palavras-chave, identificadores, literais, operadores).
-2. **Analisador Sintático (Parser):** Reconhecimento de gramática e geração da Árvore Sintática Abstrata (AST).
-3. **Analisador Semântico:** Tabela de símbolos, checagem de tipos e regras de escopo.
-4. **Geração de Código:** Geração de código intermediário ou assembly final.
+### Recursos da Linguagem Suportados
+- **Tipos primitivos:** `int`, `float`, `char`, `bool` e `void`.
+- **Coerção de tipos:** Promoção implícita de `int` para `float` em atribuições e expressões aritméticas.
+- **Vetores estáticos (1D):** Declaração com tamanho fixo positivo (`int v[10]`), tamanho inferido por literal string (`char s[] = "oi"`) e indexação com checagem estática de limites.
+- **Estruturas de controle de fluxo:** Condicionais (`if`, `if-else`) e laços de repetição (`while`, `for`, `break`, `continue`).
+- **Funções:** Declaração com múltiplos parâmetros, verificação de aridade, chamadas recursivas, recursão mútua e análise de retorno obrigatório em funções não-void.
+- **Ponto de entrada canônico:** Validação obrigatória da função `main` no escopo global (com retorno `int` ou `void`).
+
+> **Nota de Escopo:** Para viabilizar a transpilação direta e idiomática para Python sem necessidade de um emulador de memória RAM, construções como ponteiros/alocação dinâmica (`malloc`/`free`), `structs`, `switch-case` e sombreamento de variáveis dentro da mesma função foram deliberadamente excluídos do escopo (consulte [Decisões de Projeto](docs/decisoes.md)).
+
+### Pipeline do Compilador
+1. **Analisador Léxico (Scanner):** Identificação de Tokens via Flex (palavras-chave, identificadores, literais, operadores).
+2. **Analisador Sintático (Parser):** Reconhecimento de gramática livre de contexto via Bison e construção da Árvore Sintática Abstrata (AST).
+3. **Analisador Semântico:** Tabela de símbolos com múltiplos escopos, validação de l-values, restrições aritméticas, detecção de divisão por zero, verificação de limites de vetores, fluxo de retorno e validação da função `main`.
+4. **Geração de Código:** Transpilação da AST para código Python 3 executável e legível.
+
+---
 
 ## Execução Local
 
 ### Pré-requisitos
-Para compilar e executar o projeto localmente, você precisará de:
-- Um compilador C (como `gcc` ou `clang`).
-- Utilitário `make` (se utilizarmos Makefile futuramente).
+- Compilador C (`gcc` ou `clang`).
+- Geradores de analisadores: `flex` e `bison` (ou `win_flex` e `win_bison` no Windows).
+- Utilitário `make` (ou `mingw32-make`).
+- `python3` (para execução das suítes de teste).
 
 ### Passo a Passo
 
