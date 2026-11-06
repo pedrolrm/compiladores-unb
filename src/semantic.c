@@ -1,3 +1,4 @@
+
 #include "semantic.h"
 #include "parser.tab.h"
 #include <string.h>
@@ -31,18 +32,18 @@ static bool is_type_compatible(const DataType *dest, const DataType *src) {
     return false;
 }
 
-static bool is_literal_zero(const ASTNode *n) {
-    if ( n->type == AST_LIT_INT){
-        return n->int_val == 0;
-    } else if( n->type == AST_LIT_FLOAT){
-        return n->float_val == 0.0f;
-    }
-
-    return false;
-}
 /*
  * Declaração adiantada para visita recursiva da AST
  */
+
+static bool is_literal_zero(const ASTNode *n) {
+    if (n->type == AST_LIT_INT) {
+        return n->int_val == 0;
+    } else if (n->type == AST_LIT_FLOAT) {
+        return n->float_val == 0.0f;
+    }
+    return false;
+}
 static void check_node(ASTNode *node);
 
 /*
@@ -171,11 +172,10 @@ static void check_node(ASTNode *node) {
             check_node(node->left);
 
             DataType *t = &node->left->data_type;
-            bool tipo_valido = !t->is_array && (t->base ==TYPE_INT || t->base == TYPE_FLOAT||t->base == TYPE_BOOL);
-
+            bool tipo_valido = !t->is_array && (t->base == TYPE_INT || t->base == TYPE_FLOAT || t->base == TYPE_BOOL);
 
             if (t->base != TYPE_UNKNOWN && !tipo_valido) {
-                report_semantic_error(node->left->line, node->left->column,  "condição do comando 'if' deve ser do tipo int, float ou bool");
+                report_semantic_error(node->left->line, node->left->column, "condição do comando 'if' deve ser do tipo int, float ou bool");
             }
 
             check_node(node->right);
@@ -189,11 +189,10 @@ static void check_node(ASTNode *node) {
             loop_depth++;
             check_node(node->left);
             DataType *t = &node->left->data_type;
-            bool tipo_valido = !t->is_array && (t->base ==TYPE_INT || t->base == TYPE_FLOAT||t->base == TYPE_BOOL);
-
+            bool tipo_valido = !t->is_array && (t->base == TYPE_INT || t->base == TYPE_FLOAT || t->base == TYPE_BOOL);
 
             if (t->base != TYPE_UNKNOWN && !tipo_valido) {
-                report_semantic_error(node->left->line, node->left->column,  "condição do comando 'while' deve ser do tipo int, float ou bool");
+                report_semantic_error(node->left->line, node->left->column, "condição do comando 'while' deve ser do tipo int, float ou bool");
             }
             check_node(node->right);
             loop_depth--;
@@ -204,7 +203,7 @@ static void check_node(ASTNode *node) {
             current_scope = symtab_enter_scope(current_scope);
             loop_depth++;
             check_node(node->left);  /* init */
-            
+
             check_node(node->right); /* cond */
             if (node->right) {
                 DataType *t = &node->right->data_type;
@@ -339,23 +338,21 @@ static void check_node(ASTNode *node) {
                 node->op == OP_GT || node->op == OP_GE ||
                 node->op == OP_AND || node->op == OP_OR) {
                 node->data_type = data_type_primitive(TYPE_BOOL);
-            } else if (node->op== OP_MOD){
+            } else if (node->op == OP_MOD) {
                 bool esq_int = lt->base == TYPE_INT && !lt->is_array;
-                bool dir_int = rt->base == TYPE_INT && !rt->is_array; 
+                bool dir_int = rt->base == TYPE_INT && !rt->is_array;
 
                 bool esq_invalido = lt->base != TYPE_UNKNOWN && !esq_int;
                 bool dir_invalido = rt->base != TYPE_UNKNOWN && !dir_int;
 
-                if (esq_invalido || dir_invalido){
-                    report_semantic_error(node->line, node->column,  "operador '%' exige operandos do tipo int");
-                } else if( esq_int && dir_int){
+                if (esq_invalido || dir_invalido) {
+                    report_semantic_error(node->line, node->column, "operador '%' exige operandos do tipo int");
+                } else if (esq_int && dir_int) {
                     node->data_type = data_type_primitive(TYPE_INT);
-
-                }else{
-                     node->data_type = data_type_primitive(TYPE_UNKNOWN);
+                } else {
+                    node->data_type = data_type_primitive(TYPE_UNKNOWN);
                 }
-            
-            }else {
+            } else {
                 /* Operadores aritméticos (+, -, *, /) */
                 if (lt->base == TYPE_FLOAT || rt->base == TYPE_FLOAT) {
                     node->data_type = data_type_primitive(TYPE_FLOAT);
@@ -378,6 +375,16 @@ static void check_node(ASTNode *node) {
             break;
 
         case AST_ASSIGN: {
+            /* Alteração #73: validação do destino (l-value). */
+            if (node->left->type != AST_IDENTIFIER &&
+                node->left->type != AST_ARRAY_ACCESS) {
+                report_semantic_error(
+                    node->line,
+                    node->column,
+                    "lado esquerdo da atribuição não é um l-value válido"
+                );
+            }
+
             check_node(node->left);
             check_node(node->right);
 
