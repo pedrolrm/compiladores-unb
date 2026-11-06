@@ -38,7 +38,7 @@ DataType data_type_primitive(BaseType base) {
     DataType dt;
     dt.base = base;
     dt.is_array = false;
-    dt.array_size = 0;
+    dt.array_size = -1;
     return dt;
 }
 
@@ -73,6 +73,20 @@ const char *data_type_to_string(const DataType *dt) {
         snprintf(buffer, sizeof(buffer), "%s", base_str);
     }
     return buffer;
+}
+
+bool ast_literal_int_value(ASTNode *expr, int *out) {
+    if (!expr) return false;
+    if (expr->type == AST_LIT_INT) {
+        *out = expr->int_val;
+        return true;
+    }
+    if (expr->type == AST_UN_OP && expr->op == OP_MINUS &&
+        expr->left && expr->left->type == AST_LIT_INT) {
+        *out = -expr->left->int_val;
+        return true;
+    }
+    return false;
 }
 
 bool data_type_equals(const DataType *a, const DataType *b) {
