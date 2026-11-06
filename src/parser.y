@@ -294,8 +294,9 @@ declarator
     | IDENTIFIER DELIM_LBRACKET expression DELIM_RBRACKET {
         ASTNode *decl = ast_create_var_decl(data_type_primitive(TYPE_UNKNOWN), $1, NULL, @1.first_line, @1.first_column);
         decl->data_type.is_array = true;
-        if ($3 && $3->type == AST_LIT_INT) {
-            decl->data_type.array_size = $3->int_val;
+        int lit_size;
+        if (ast_literal_int_value($3, &lit_size)) {
+            decl->data_type.array_size = lit_size;
         }
         ast_free($3);
         free($1);
@@ -304,7 +305,7 @@ declarator
     | IDENTIFIER DELIM_LBRACKET DELIM_RBRACKET {
         ASTNode *decl = ast_create_var_decl(data_type_primitive(TYPE_UNKNOWN), $1, NULL, @1.first_line, @1.first_column);
         decl->data_type.is_array = true;
-        decl->data_type.array_size = 0;
+        decl->data_type.array_size = -1;
         free($1);
         $$ = decl;
     }

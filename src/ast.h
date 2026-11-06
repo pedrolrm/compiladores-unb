@@ -23,7 +23,7 @@ typedef enum {
 typedef struct DataType {
     BaseType base;
     bool is_array;
-    int array_size;       /* Tamanho fixo do array (se > 0) ou 0 para indefinido */
+    int array_size;       /* Tamanho fixo do array (se > 0) ou -1 para indefinido */
 } DataType;
 
 /*
@@ -96,6 +96,11 @@ DataType data_type_array(DataType elem_type, int size);
 const char *base_type_to_string(BaseType base);
 const char *data_type_to_string(const DataType *dt);
 bool data_type_equals(const DataType *a, const DataType *b);
+
+/* Extrai o valor de um literal inteiro constante, incluindo literal negativo
+ * (AST_UN_OP de OP_MINUS sobre um AST_LIT_INT). Usado para validar tamanho de
+ * vetor na declaração. Retorna false se a expressão não for um literal. */
+bool ast_literal_int_value(ASTNode *expr, int *out);
 
 /* Construtores de Nós da AST */
 ASTNode *ast_create_node(ASTNodeType type, int line, int col);

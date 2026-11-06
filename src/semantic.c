@@ -97,6 +97,14 @@ static void check_node(ASTNode *node) {
                 }
             }
 
+            /* Tamanho de vetor declarado precisa ser estritamente positivo */
+            if (node->data_type.is_array && node->data_type.array_size != -1 &&
+                node->data_type.array_size <= 0) {
+                char msg[128];
+                snprintf(msg, sizeof(msg), "tamanho do vetor '%s' deve ser maior que zero", node->name);
+                report_semantic_error(node->line, node->column, msg);
+            }
+
             /* Bloqueia redeclaração no mesmo escopo e sombreamento (shadowing) dentro da função */
             Symbol *existing = symtab_lookup(current_scope, node->name);
             if (existing && (current_scope->level == 0 || existing->scope_level > 0)) {
@@ -278,6 +286,20 @@ static void check_node(ASTNode *node) {
             }
             if (node->right->data_type.base != TYPE_UNKNOWN && node->right->data_type.base != TYPE_INT) {
                 report_semantic_error(node->line, node->column, "índice de array deve ser do tipo inteiro");
+            }
+
+            /* Checagem estática de limites: só é possível quando o índice é um
+             * literal e o tamanho do vetor é conhecido em tempo de compilação */
+            if (node->left->data_type.is_array && node->left->data_type.array_size > 0 &&
+                node->right->type == AST_LIT_INT) {
+                int idx = node->right->int_val;
+                if (idx < 0 || idx >= node->left->data_type.array_size) {
+                    char msg[128];
+                    snprintf(msg, sizeof(msg),
+                             "índice de array fora dos limites (índice %d, tamanho %d)",
+                             idx, node->left->data_type.array_size);
+                    report_semantic_error(node->line, node->column, msg);
+                }
             }
 
             node->data_type = node->left->data_type;
