@@ -35,6 +35,15 @@ static bool is_type_compatible(const DataType *dest, const DataType *src) {
 /*
  * Declaração adiantada para visita recursiva da AST
  */
+
+static bool is_literal_zero(const ASTNode *n) {
+    if (n->type == AST_LIT_INT) {
+        return n->int_val == 0;
+    } else if (n->type == AST_LIT_FLOAT) {
+        return n->float_val == 0.0f;
+    }
+    return false;
+}
 static void check_node(ASTNode *node);
 
 /*
@@ -159,26 +168,51 @@ static void check_node(ASTNode *node) {
             check_node(node->left);
             break;
 
-        case AST_IF:
+        case AST_IF: {
             check_node(node->left);
+
+            DataType *t = &node->left->data_type;
+            bool tipo_valido = !t->is_array && (t->base == TYPE_INT || t->base == TYPE_FLOAT || t->base == TYPE_BOOL);
+
+            if (t->base != TYPE_UNKNOWN && !tipo_valido) {
+                report_semantic_error(node->left->line, node->left->column, "condição do comando 'if' deve ser do tipo int, float ou bool");
+            }
+
             check_node(node->right);
             if (node->extra) {
                 check_node(node->extra);
             }
             break;
+        }
 
-        case AST_WHILE:
+        case AST_WHILE: {
             loop_depth++;
             check_node(node->left);
+            DataType *t = &node->left->data_type;
+            bool tipo_valido = !t->is_array && (t->base == TYPE_INT || t->base == TYPE_FLOAT || t->base == TYPE_BOOL);
+
+            if (t->base != TYPE_UNKNOWN && !tipo_valido) {
+                report_semantic_error(node->left->line, node->left->column, "condição do comando 'while' deve ser do tipo int, float ou bool");
+            }
             check_node(node->right);
             loop_depth--;
             break;
+        }
 
         case AST_FOR: {
             current_scope = symtab_enter_scope(current_scope);
             loop_depth++;
             check_node(node->left);  /* init */
+
             check_node(node->right); /* cond */
+            if (node->right) {
+                DataType *t = &node->right->data_type;
+                bool tipo_valido = !t->is_array && (t->base == TYPE_INT || t->base == TYPE_FLOAT || t->base == TYPE_BOOL);
+
+                if (t->base != TYPE_UNKNOWN && !tipo_valido) {
+                    report_semantic_error(node->right->line, node->right->column, "condição do comando 'for' deve ser do tipo int, float ou bool");
+                }
+            }
             check_node(node->extra); /* step e body */
             loop_depth--;
             current_scope = symtab_exit_scope(current_scope);
@@ -294,14 +328,32 @@ static void check_node(ASTNode *node) {
             DataType *lt = &node->left->data_type;
             DataType *rt = &node->right->data_type;
 
+            if ((node->op == OP_DIV || node->op == OP_MOD) && is_literal_zero(node->right)) {
+                report_semantic_error(node->right->line, node->right->column, "divisão por zero");
+            }
+
             /* Operadores relacionais e lógicos sempre resultam em bool */
             if (node->op == OP_EQ || node->op == OP_NEQ ||
                 node->op == OP_LT || node->op == OP_LE ||
                 node->op == OP_GT || node->op == OP_GE ||
                 node->op == OP_AND || node->op == OP_OR) {
                 node->data_type = data_type_primitive(TYPE_BOOL);
+            } else if (node->op == OP_MOD) {
+                bool esq_int = lt->base == TYPE_INT && !lt->is_array;
+                bool dir_int = rt->base == TYPE_INT && !rt->is_array;
+
+                bool esq_invalido = lt->base != TYPE_UNKNOWN && !esq_int;
+                bool dir_invalido = rt->base != TYPE_UNKNOWN && !dir_int;
+
+                if (esq_invalido || dir_invalido) {
+                    report_semantic_error(node->line, node->column, "operador '%' exige operandos do tipo int");
+                } else if (esq_int && dir_int) {
+                    node->data_type = data_type_primitive(TYPE_INT);
+                } else {
+                    node->data_type = data_type_primitive(TYPE_UNKNOWN);
+                }
             } else {
-                /* Operadores aritméticos (+, -, *, /, %) */
+                /* Operadores aritméticos (+, -, *, /) */
                 if (lt->base == TYPE_FLOAT || rt->base == TYPE_FLOAT) {
                     node->data_type = data_type_primitive(TYPE_FLOAT);
                 } else if (lt->base == TYPE_INT && rt->base == TYPE_INT) {
@@ -335,6 +387,10 @@ static void check_node(ASTNode *node) {
 
             check_node(node->left);
             check_node(node->right);
+
+            if (node->op == OP_DIV_ASSIGN && is_literal_zero(node->right)) {
+                report_semantic_error(node->right->line, node->right->column, "divisão por zero");
+            }
 
             if (node->left->data_type.base != TYPE_UNKNOWN && node->right->data_type.base != TYPE_UNKNOWN) {
                 if (!is_type_compatible(&node->left->data_type, &node->right->data_type)) {

@@ -18,7 +18,7 @@ COMPILER = "./compilador"
 
 
 def run_semantic_test(source_code, expect_success, expected_msg=None, test_name=""):
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".c", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".c", delete=False) as tmp:
         tmp.write(source_code)
         tmp_name = tmp.name
 
@@ -28,6 +28,8 @@ def run_semantic_test(source_code, expect_success, expected_msg=None, test_name=
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5
         )
 
@@ -71,7 +73,7 @@ def run_symbols_output_test():
     }
     """
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".c", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".c", delete=False) as tmp:
         tmp.write(test_code)
         tmp_name = tmp.name
 
@@ -81,6 +83,8 @@ def run_symbols_output_test():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5
         )
 
@@ -127,6 +131,8 @@ def run_lvalue_ast_test():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=20
         )
 
@@ -142,6 +148,8 @@ def run_lvalue_ast_test():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5
         )
 
@@ -329,6 +337,194 @@ def main():
             True,
             None,
             "Válido: Atribuição Composta a Elemento de Vetor"
+        ),
+        # Testes de condições (#74)
+        (
+            "void f() {} int main() { if (f()) {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em If"
+        ),
+        (
+            "int main() { int a = 1; if (a > 0) {} return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em If"
+        ),
+        (
+            "void f() {} int main() { while (f()) {} return 0; }",
+            False,
+            "condição do comando 'while' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em While"
+        ),
+        (
+            "int main() { while (true) { break; } return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em While"
+        ),
+        (
+            "void f() {} int main() { for (;f();) {} return 0; }",
+            False,
+            "condição do comando 'for' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em For"
+        ),
+        (
+            "int main() { for (int i = 0; i < 3; i += 1) {} return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em For"
+        ),
+        (
+            "int main() { for (;;) { break; } return 0; }",
+            True,
+            None,
+            "For Sem Condição Não Gera Erro"
+        ),
+        # Testes de restrição do operador módulo e divisão por zero (#75)
+        (
+            "int main() { int x = 5.0 % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Float à Esquerda"
+        ),
+        (
+            "int main() { int x = 5 % 2.0; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Float à Direita"
+        ),
+        (
+            "int main() { float a = 1.0; int b = 2; float c = a % b; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Variável Float"
+        ),
+        (
+            "int main() { int x = true % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Bool"
+        ),
+        (
+            "int main() { int x = 'a' % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Char"
+        ),
+        (
+            "int main() { int v[2]; int x = v % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Array"
+        ),
+        (
+            "int main() { int x = 7 % 2; return 0; }",
+            True,
+            None,
+            "Módulo Entre Inteiros"
+        ),
+        (
+            "int main() { bool b = 7 % 2; return 0; }",
+            False,
+            "tipo incompatível na inicialização da variável 'b'",
+            "Erro: Resultado do Módulo é Int"
+        ),
+        (
+            "int main() { int x = 1 / 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Inteiro"
+        ),
+        (
+            "int main() { float y = 1.0 / 0.0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Float"
+        ),
+        (
+            "int main() { int x = 1 % 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Módulo Por Zero"
+        ),
+        (
+            "int main() { int x = 1 / (0); return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Com Parênteses"
+        ),
+        (
+            "int main() { int x = 4; x /= 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Atribuição Composta Por Zero"
+        ),
+        (
+            "int main() { int x = 1 / 2; return 0; }",
+            True,
+            None,
+            "Divisão Por Literal Não Zero"
+        ),
+        (
+            "int main() { float y = 1.0 / 0.5; return 0; }",
+            True,
+            None,
+            "Divisão Por Float Não Zero"
+        ),
+        (
+            "int main() { int x = 0 / 5; return 0; }",
+            True,
+            None,
+            "Zero Como Dividendo"
+        ),
+        (
+            "int main() { int z = 0; int x = 1 / z; return 0; }",
+            True,
+            None,
+            "Divisão Por Variável Não É Detectada"
+        ),
+        (
+            "int main() { int x = 1 * 0; return 0; }",
+            True,
+            None,
+            "Multiplicação Por Zero"
+        ),
+        (
+            "int main() { int x = 4; x /= 2; return 0; }",
+            True,
+            None,
+            "Atribuição Composta Por Não Zero"
+        ),
+        (
+            "int main() { int v[5]; if (v) {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Array Como Condição"
+        ),
+        (
+            "int main() { if (\"abc\") {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: String Como Condição"
+        ),
+        (
+            "int main() { if ('a') {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Char Como Condição"
+        ),
+        (
+            "int main() { float b = 1.0; if (b) {} return 0; }",
+            True,
+            None,
+            "Condição Float Válida"
+        ),
+        (
+            "int main() { int a = 1; if (a) {} return 0; }",
+            True,
+            None,
+            "Condição Int Válida"
         )
     ]
 
