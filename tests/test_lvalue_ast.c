@@ -18,7 +18,7 @@ static int check_invalid_target(ASTNode *target) {
 
     ASTNode *function = ast_create_func_def(
         data_type_primitive(TYPE_VOID),
-        "teste",
+        "main",
         NULL,
         body,
         1, 1

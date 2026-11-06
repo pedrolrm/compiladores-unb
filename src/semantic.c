@@ -484,6 +484,19 @@ int semantic_analyze(ASTNode *root, Scope **out_global_scope) {
     /* Passo 2: Verificação completa de escopos e tipos */
     check_node(root);
 
+    /* Passo 3: Validação do ponto de entrada (função main) */
+    Symbol *main_sym = symtab_lookup_local(global_scope, "main");
+    if (!main_sym) {
+        int line = root ? (root->line > 0 ? root->line : 1) : 1;
+        int col = root ? (root->column > 0 ? root->column : 1) : 1;
+        report_semantic_error(line, col, "função 'main' não declarada no escopo global");
+    } else if (main_sym->kind != SYM_FUNC) {
+        report_semantic_error(main_sym->line, main_sym->column, "o identificador 'main' deve ser uma função");
+    } else if (main_sym->return_type.is_array ||
+               (main_sym->return_type.base != TYPE_INT && main_sym->return_type.base != TYPE_VOID)) {
+        report_semantic_error(main_sym->line, main_sym->column, "tipo de retorno da função 'main' deve ser 'int' ou 'void'");
+    }
+
     if (out_global_scope) {
         *out_global_scope = global_scope;
     } else {
