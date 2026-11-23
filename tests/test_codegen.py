@@ -193,6 +193,120 @@ TESTS = [
         None,
         "Múltiplos parâmetros e chamadas aninhadas",
     ),
+    (
+        """
+        int mdc(int a, int b) {
+            if (b == 0) {
+                return a;
+            }
+            return mdc(b, a % b);
+        }
+
+        int main() {
+            return mdc(48, 18);
+        }
+        """,
+        6,
+        None,
+        "Recursão: MDC de Euclides mdc(48, 18) == 6",
+    ),
+    (
+        """
+        int ack(int m, int n) {
+            if (m == 0) {
+                return n + 1;
+            }
+            if (n == 0) {
+                return ack(m - 1, 1);
+            }
+            return ack(m - 1, ack(m, n - 1));
+        }
+
+        int main() {
+            return ack(2, 3);
+        }
+        """,
+        9,
+        None,
+        "Recursão aninhada: Ackermann ack(2, 3) == 9",
+    ),
+    (
+        """
+        int pot(int base, int exp) {
+            if (exp == 0) {
+                return 1;
+            }
+            if (exp % 2 == 0) {
+                int meio = pot(base, exp / 2);
+                return meio * meio;
+            }
+            return base * pot(base, exp - 1);
+        }
+
+        int main() {
+            return pot(3, 4);
+        }
+        """,
+        81,
+        None,
+        "Recursão: exponenciação rápida pot(3, 4) == 81",
+    ),
+    (
+        """
+        int main() {
+            int x = -5;
+            x = -x + (10 * 2);
+            x += 5;
+            x -= 3;
+            x *= 2;
+            x /= 3;
+            return x;
+        }
+        """,
+        18,
+        None,
+        "Operadores unários e atribuições compostas (+=, -=, *=, /=)",
+    ),
+    (
+        """
+        int main() {
+            int a = 0;
+            int b = 10;
+            if ((a != 0 && (b / a) > 1) || (a == 0 && b == 10)) {
+                return 1;
+            }
+            return 0;
+        }
+        """,
+        1,
+        None,
+        "Curto-circuito lógico evitando divisão por zero",
+    ),
+    (
+        """
+        int passos = 0;
+
+        void collatz(int n) {
+            if (n == 1) {
+                return;
+            }
+            passos += 1;
+            if (n % 2 == 0) {
+                collatz(n / 2);
+            } else {
+                collatz(3 * n + 1);
+            }
+        }
+
+        int main() {
+            collatz(6);
+            return passos;
+        }
+        """,
+        8,
+        None,
+        "Recursão com variável global: passos de Collatz(6) == 8",
+    ),
 ]
 
 
