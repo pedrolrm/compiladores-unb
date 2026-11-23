@@ -110,7 +110,90 @@ def run_e2e_test(c_code, expected_exit_code, expected_stdout=None,
 
 
 # Casos de teste E2E (populados nas issues #88 e #89)
-TESTS = []
+TESTS = [
+    (
+        """
+        int main() {
+            int a = 10;
+            int b = 3;
+            int c = 2;
+            int res = a + b * c - 8 / 2 + 17 % 5;
+            return res;
+        }
+        """,
+        14,
+        None,
+        "Aritmética: precedência com +, -, *, / e %",
+    ),
+    (
+        """
+        int main() {
+            int x = 5;
+            int y = 10;
+            bool cond = (x < y && y != 0) || !(x == 5);
+            if (cond && !(x > y)) {
+                return 1;
+            }
+            return 0;
+        }
+        """,
+        1,
+        None,
+        "Expressões lógicas e relacionais (&&, ||, !, comparações)",
+    ),
+    (
+        """
+        int fatorial(int n) {
+            if (n <= 1) {
+                return 1;
+            }
+            return n * fatorial(n - 1);
+        }
+
+        int main() {
+            return fatorial(5);
+        }
+        """,
+        120,
+        None,
+        "Recursão: fatorial(5) == 120",
+    ),
+    (
+        """
+        int fib(int n) {
+            if (n <= 1) {
+                return n;
+            }
+            return fib(n - 1) + fib(n - 2);
+        }
+
+        int main() {
+            return fib(7);
+        }
+        """,
+        13,
+        None,
+        "Recursão: fib(7) == 13",
+    ),
+    (
+        """
+        int soma3(int a, int b, int c) {
+            return a + b + c;
+        }
+
+        int combina(int x, int y, int z, int w) {
+            return soma3(x + y, z * 2, w - 1);
+        }
+
+        int main() {
+            return combina(2, 3, soma3(1, 2, 3), 10);
+        }
+        """,
+        26,
+        None,
+        "Múltiplos parâmetros e chamadas aninhadas",
+    ),
+]
 
 
 def main():
