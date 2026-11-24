@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Isrc
 
-SRCS = src/ast.c src/symtab.c src/semantic.c src/codegen_expr.c
+SRCS = src/ast.c src/symtab.c src/semantic.c src/codegen_expr.c src/codegen_loops.c
 
 all: compilador
 
@@ -20,6 +20,8 @@ test: compilador
 	python3 tests/test_semantic.py || python tests/test_semantic.py
 	$(CC) $(CFLAGS) -o tests/_temp_codegen_expr tests/test_codegen_expr.c src/codegen_expr.c src/ast.c
 	./tests/_temp_codegen_expr
+	$(CC) $(CFLAGS) -o tests/_temp_codegen_loops tests/test_codegen_loops.c src/codegen_loops.c src/codegen_expr.c src/ast.c
+	./tests/_temp_codegen_loops
 
 clean:
 	rm -f compilador src/lex.yy.c src/parser.tab.c src/parser.tab.h
