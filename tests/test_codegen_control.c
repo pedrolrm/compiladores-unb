@@ -11,6 +11,17 @@ static int emit_expr(FILE *out, const ASTNode *expr) {
     return fputs(expr_text, out) == EOF ? -1 : 0;
 }
 
+static int emit_stmt(FILE *out, const ASTNode *stmt, int indent_level) {
+    for (int i = 0; i < indent_level; i++) fputs("    ", out);
+    if (stmt->type == AST_CONTINUE) {
+        return fputs("i += 1\n    continue\n", out) == EOF ? -1 : 0;
+    }
+    if (stmt->type == AST_ASSIGN) {
+        return fputs("y = 1\n", out) == EOF ? -1 : 0;
+    }
+    return -1;
+}
+
 static void check(FILE *out, const char *expected) {
     char actual[512];
     size_t size;
@@ -43,29 +54,49 @@ int main(void) {
     FILE *out = tmpfile();
     assert(out != NULL);
     expr_text = "x > 0";
-    assert(codegen_emit_control(out, &branch, 1, emit_expr) == 0);
+    assert(codegen_emit_control(out, &branch, 1, emit_expr, NULL) == 0);
     check(out, "    if x > 0:\n        return 5\n    else:\n        continue\n");
     fclose(out);
+
+    /* Delegação de comandos não-controle e continue via emit_statement */
+    ASTNode assign = {0};
+    assign.type = AST_ASSIGN;
+    branch.right = &assign;
+    out = tmpfile();
+    assert(out != NULL);
+    assert(codegen_emit_control(out, &branch, 0, emit_expr, emit_stmt) == 0);
+    check(out, "if x > 0:\n    y = 1\nelse:\n    i += 1\n    continue\n");
+    fclose(out);
+
+    /* Sem emit_statement, comando não-controle dentro de if deve falhar */
+    out = tmpfile();
+    assert(out != NULL);
+    assert(codegen_emit_control(out, &branch, 0, emit_expr, NULL) == -1);
+    fclose(out);
+    branch.right = &then_block;
 
     ASTNode empty = {0};
     empty.type = AST_BLOCK;
     out = tmpfile();
-    assert(codegen_emit_control(out, &empty, 0, emit_expr) == 0);
+    assert(out != NULL);
+    assert(codegen_emit_control(out, &empty, 0, emit_expr, NULL) == 0);
     check(out, "pass\n");
     fclose(out);
 
     ASTNode no_value = {0};
     no_value.type = AST_RETURN;
     out = tmpfile();
-    assert(codegen_emit_control(out, &no_value, 0, NULL) == 0);
+    assert(out != NULL);
+    assert(codegen_emit_control(out, &no_value, 0, NULL, NULL) == 0);
     check(out, "return\n");
     fclose(out);
 
     ASTNode bad = {0};
     bad.type = AST_IF;
     out = tmpfile();
-    assert(codegen_emit_control(out, &bad, 0, emit_expr) == -1);
-    assert(codegen_emit_control(NULL, &branch, 0, emit_expr) == -1);
+    assert(out != NULL);
+    assert(codegen_emit_control(out, &bad, 0, emit_expr, NULL) == -1);
+    assert(codegen_emit_control(NULL, &branch, 0, emit_expr, NULL) == -1);
     fclose(out);
     puts("Codegen #84: selecao e desvios aprovados.");
     return 0;
