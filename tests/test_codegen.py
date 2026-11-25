@@ -307,6 +307,143 @@ TESTS = [
         None,
         "Recursão com variável global: passos de Collatz(6) == 8",
     ),
+    (
+        """
+        int main() {
+            int n = 5;
+            int soma = 0;
+            while (n > 0) {
+                soma += n;
+                n -= 1;
+            }
+            return soma;
+        }
+        """,
+        15,
+        None,
+        "Laço while: acumulador e contagem regressiva",
+    ),
+    (
+        """
+        int main() {
+            int total = 0;
+            for (int i = 1; i <= 10; i += 1) {
+                total += i;
+            }
+            return total;
+        }
+        """,
+        55,
+        None,
+        "Laço for: somatório com inicialização local e incremento",
+    ),
+    (
+        """
+        int main() {
+            int soma = 0;
+            for (int i = 0; i < 10; i += 1) {
+                if (i % 2 == 0) {
+                    continue;
+                }
+                if (i > 7) {
+                    break;
+                }
+                soma += i;
+            }
+            return soma;
+        }
+        """,
+        16,
+        None,
+        "Controle de laço: break e continue dentro de for",
+    ),
+    (
+        """
+        int main() {
+            int v[6];
+            for (int i = 0; i < 6; i += 1) {
+                v[i] = i * 3 + 1;
+            }
+            int alvo = 13;
+            int idx = -1;
+            int j = 0;
+            while (j < 6) {
+                if (v[j] == alvo) {
+                    idx = j;
+                    break;
+                }
+                j += 1;
+            }
+            if (idx == 4 && v[0] == 1 && v[5] == 16) {
+                return idx + v[2];
+            }
+            return 0;
+        }
+        """,
+        11,
+        None,
+        "Vetor 1D: preenchimento, busca linear e indexação",
+    ),
+    (
+        """
+        int main() {
+            int arr[5];
+            arr[0] = 40;
+            arr[1] = 10;
+            arr[2] = 50;
+            arr[3] = 20;
+            arr[4] = 30;
+
+            for (int i = 0; i < 5; i += 1) {
+                for (int j = 0; j < 4 - i; j += 1) {
+                    if (arr[j] > arr[j + 1]) {
+                        int tmp = arr[j];
+                        arr[j] = arr[j + 1];
+                        arr[j + 1] = tmp;
+                    }
+                }
+            }
+
+            bool ordenado = true;
+            for (int k = 0; k < 4; k += 1) {
+                if (arr[k] > arr[k + 1]) {
+                    ordenado = false;
+                }
+            }
+
+            if (ordenado && arr[0] == 10 && arr[4] == 50) {
+                return arr[2];
+            }
+            return 0;
+        }
+        """,
+        30,
+        None,
+        "Vetor 1D: Bubble Sort com laços aninhados",
+    ),
+    (
+        """
+        int main() {
+            int a[6];
+            for (int i = 0; i < 6; i += 1) {
+                a[i] = i + 1;
+            }
+            int esq = 0;
+            int dir = 5;
+            while (esq < dir) {
+                int aux = a[esq];
+                a[esq] = a[dir];
+                a[dir] = aux;
+                esq += 1;
+                dir -= 1;
+            }
+            return a[0] * 10 + a[5];
+        }
+        """,
+        61,
+        None,
+        "Vetor 1D: inversão in-place com while",
+    ),
 ]
 
 
