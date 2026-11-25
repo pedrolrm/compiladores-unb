@@ -79,10 +79,13 @@ int main(void) {
     check(out, "if __name__ == '__main__':\n    import sys\n    sys.exit(main())\n");
     fclose(out);
 
+    out = tmpfile();
+    assert(out != NULL);
     assert(codegen_emit_function_globals(NULL, &function, &global, 0) == -1);
     assert(codegen_emit_function_globals(out, NULL, &global, 0) == -1);
     assert(codegen_emit_function_globals(out, &body, &global, 0) == -1);
     assert(codegen_emit_function_globals(out, &function, &global, -1) == -1);
+    fclose(out);
     assert(codegen_emit_python_entrypoint(NULL) == -1);
     puts("Codegen #83: globais e ponto de entrada aprovados.");
     return 0;
