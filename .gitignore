@@ -52,3 +52,7 @@ lex.yy.c
 *.tab.c
 *.tab.h
 *.output
+
+# Python
+__pycache__/
+*.pyc

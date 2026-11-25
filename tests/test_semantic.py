@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Suíte de Testes Automatizados para a Tabela de Símbolos e Análise Semântica
@@ -15,28 +16,44 @@ RESET = "\033[0m"
 
 COMPILER = "./compilador"
 
+
 def run_semantic_test(source_code, expect_success, expected_msg=None, test_name=""):
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".c", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".c", delete=False) as tmp:
         tmp.write(source_code)
         tmp_name = tmp.name
 
     try:
-        proc = subprocess.run([COMPILER, "--check", tmp_name],
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              text=True,
-                              timeout=5)
+        proc = subprocess.run(
+            [COMPILER, "--check", tmp_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5
+        )
 
         if expect_success:
             if proc.returncode != 0:
-                print(f"[{RED}FAIL{RESET}] {test_name} - Esperava sucesso (0), obteve {proc.returncode}:\n{proc.stderr}")
+                print(
+                    f"[{RED}FAIL{RESET}] {test_name} - "
+                    f"Esperava sucesso (0), obteve {proc.returncode}:\n{proc.stderr}"
+                )
                 return False
         else:
             if proc.returncode == 0:
-                print(f"[{RED}FAIL{RESET}] {test_name} - Esperava falha semântica, mas execução retornou 0.")
+                print(
+                    f"[{RED}FAIL{RESET}] {test_name} - "
+                    "Esperava falha semântica, mas execução retornou 0."
+                )
                 return False
+
             if expected_msg and expected_msg not in proc.stderr:
-                print(f"[{RED}FAIL{RESET}] {test_name} - Mensagem esperada '{expected_msg}' não encontrada no stderr:\n{proc.stderr}")
+                print(
+                    f"[{RED}FAIL{RESET}] {test_name} - "
+                    f"Mensagem esperada '{expected_msg}' não encontrada no stderr:\n"
+                    f"{proc.stderr}"
+                )
                 return False
 
         print(f"[{GREEN}PASS{RESET}] {test_name}")
@@ -44,6 +61,7 @@ def run_semantic_test(source_code, expect_success, expected_msg=None, test_name=
     finally:
         if os.path.exists(tmp_name):
             os.remove(tmp_name)
+
 
 def run_symbols_output_test():
     test_code = """
@@ -54,32 +72,103 @@ def run_symbols_output_test():
         return 0;
     }
     """
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".c", delete=False) as tmp:
+
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".c", delete=False) as tmp:
         tmp.write(test_code)
         tmp_name = tmp.name
 
     try:
-        proc = subprocess.run([COMPILER, "--symbols", tmp_name],
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              text=True,
-                              timeout=5)
+        proc = subprocess.run(
+            [COMPILER, "--symbols", tmp_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5
+        )
+
         if proc.returncode != 0:
             print(f"[{RED}FAIL{RESET}] Flag --symbols retornou erro: {proc.stderr}")
             return False
 
         output = proc.stdout
         expected = ["Escopo Nível 0", "soma", "main", "res", "val"]
+
         for exp in expected:
             if exp not in output:
-                print(f"[{RED}FAIL{RESET}] Flag --symbols não exibiu '{exp}':\n{output}")
+                print(
+                    f"[{RED}FAIL{RESET}] Flag --symbols não exibiu "
+                    f"'{exp}':\n{output}"
+                )
                 return False
 
-        print(f"[{GREEN}PASS{RESET}] Exibição Hierárquica da Tabela de Símbolos (--symbols)")
+        print(
+            f"[{GREEN}PASS{RESET}] "
+            "Exibição Hierárquica da Tabela de Símbolos (--symbols)"
+        )
         return True
     finally:
         if os.path.exists(tmp_name):
             os.remove(tmp_name)
+
+
+# Testes da subissue #73: expressões unárias e binárias na AST.
+def run_lvalue_ast_test():
+    """Confere nós binários/unários que o parser não aceita como alvo."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        binary = os.path.join(tmp_dir, "test_lvalue_ast")
+
+        build = subprocess.run(
+            [
+                "gcc", "-Wall", "-Wextra", "-Isrc",
+                "-o", binary,
+                "tests/test_lvalue_ast.c",
+                "src/ast.c",
+                "src/symtab.c",
+                "src/semantic.c"
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20
+        )
+
+        if build.returncode != 0:
+            print(
+                f"[{RED}FAIL{RESET}] "
+                f"L-values binário/unário - compilação: {build.stderr}"
+            )
+            return False
+
+        proc = subprocess.run(
+            [binary],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5
+        )
+
+        if (
+            proc.returncode != 0
+            or proc.stderr.count("não é um l-value válido") != 2
+        ):
+            print(
+                f"[{RED}FAIL{RESET}] "
+                f"L-values binário/unário: {proc.stderr}"
+            )
+            return False
+
+        print(
+            f"[{GREEN}PASS{RESET}] "
+            "Rejeição de nós AST_BIN_OP e AST_UN_OP"
+        )
+        return True
+
 
 def main():
     print("=" * 60)
@@ -121,8 +210,38 @@ def main():
             None,
             "Escopos Independentes em Funções Distintas com Variável Global"
         ),
+        (
+            """
+            void main() {
+                int a = 10;
+            }
+            """,
+            True,
+            None,
+            "Ponto de Entrada com 'void main()' Permitido"
+        ),
+        (
+            """
+            void main() {
+                return;
+            }
+            """,
+            True,
+            None,
+            "Ponto de Entrada com 'void main()' e Return Vazio Permitido"
+        ),
+        (
+            """
+            int main(int argc) {
+                return argc;
+            }
+            """,
+            True,
+            None,
+            "Ponto de Entrada 'int main(int argc)' com Parâmetros Permitido"
+        ),
 
-        # Casos de erro semântico
+        # Casos de erro semântico existentes
         (
             "int main() { x = 10; }",
             False,
@@ -185,7 +304,7 @@ def main():
             "Erro: Retorno com Expressão em Função Void"
         ),
         (
-            "int main() { int v[10]; v[\"str\"] = 1; }",
+            'int main() { int v[10]; v["str"] = 1; }',
             False,
             "índice de array deve ser do tipo inteiro",
             "Erro: Índice de Array com Tipo Não-Inteiro"
@@ -196,42 +315,572 @@ def main():
             "indexação '[]' aplicada em variável que não é array",
             "Erro: Indexação em Variável Escalar Não-Array"
         ),
+
+        # Testes de validação de vetores (#77)
         (
-            "int main() { int v[0]; }",
+            "int main() { int v[0]; return 0; }",
             False,
             "deve ser maior que zero",
             "Erro: Tamanho de Vetor Zero"
         ),
         (
-            "int main() { int v[-5]; }",
+            "int main() { int v[-5]; return 0; }",
             False,
             "deve ser maior que zero",
             "Erro: Tamanho de Vetor Negativo"
         ),
         (
-            "int main() { int v[5]; v[10] = 1; }",
+            "int main() { int v[5]; v[10] = 1; return 0; }",
             False,
             "fora dos limites",
             "Erro: Índice de Array Fora dos Limites"
         ),
         (
-            "int main() { int v[5]; v[4] = 1; }",
+            "int main() { int v[5]; v[4] = 1; return 0; }",
             True,
             None,
             "Válido: Acesso ao Último Índice Válido do Vetor"
         ),
         (
-            "int main() { char s[] = \"oi\"; }",
+            "int main() { char s[] = \"oi\"; return 0; }",
             True,
             None,
             "Válido: Vetor de Tamanho Inferido por Inicializador"
+        ),
+
+        # Novos testes: subissue #73
+        # Rejeição de l-values inválidos
+        (
+            "int main() { 10 = 1; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Literal"
+        ),
+        (
+            "int f() { return 0; } int main() { f() = 1; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Chamada"
+        ),
+        (
+            "int main() { true += false; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição Composta a Literal"
+        ),
+        (
+            "int main() { 1 -= 1; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Literal com -="
+        ),
+        (
+            "int main() { 1 *= 1; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Literal com *="
+        ),
+        (
+            "int main() { 1 /= 1; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Literal com /="
+        ),
+
+        # Destinos válidos devem continuar funcionando
+        (
+            "int main() { int x = 1; x *= 2; return 0; }",
+            True,
+            None,
+            "Válido: Atribuição Composta a Identificador"
+        ),
+        (
+            "int main() { int v[2]; v[0] += 1; return 0; }",
+            True,
+            None,
+            "Válido: Atribuição Composta a Elemento de Vetor"
+        ),
+        # Testes de condições (#74)
+        (
+            "void f() {} int main() { if (f()) {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em If"
+        ),
+        (
+            "int main() { int a = 1; if (a > 0) {} return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em If"
+        ),
+        (
+            "void f() {} int main() { while (f()) {} return 0; }",
+            False,
+            "condição do comando 'while' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em While"
+        ),
+        (
+            "int main() { while (true) { break; } return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em While"
+        ),
+        (
+            "void f() {} int main() { for (;f();) {} return 0; }",
+            False,
+            "condição do comando 'for' deve ser do tipo int, float ou bool",
+            "Erro: Condição Void em For"
+        ),
+        (
+            "int main() { for (int i = 0; i < 3; i += 1) {} return 0; }",
+            True,
+            None,
+            "Condição Bool Válida em For"
+        ),
+        (
+            "int main() { for (;;) { break; } return 0; }",
+            True,
+            None,
+            "For Sem Condição Não Gera Erro"
+        ),
+        # Testes de restrição do operador módulo e divisão por zero (#75)
+        (
+            "int main() { int x = 5.0 % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Float à Esquerda"
+        ),
+        (
+            "int main() { int x = 5 % 2.0; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Float à Direita"
+        ),
+        (
+            "int main() { float a = 1.0; int b = 2; float c = a % b; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Variável Float"
+        ),
+        (
+            "int main() { int x = true % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Bool"
+        ),
+        (
+            "int main() { int x = 'a' % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Char"
+        ),
+        (
+            "int main() { int v[2]; int x = v % 2; return 0; }",
+            False,
+            "operador '%' exige operandos do tipo int",
+            "Erro: Módulo Com Array"
+        ),
+        (
+            "int main() { int x = 7 % 2; return 0; }",
+            True,
+            None,
+            "Módulo Entre Inteiros"
+        ),
+        (
+            "int main() { bool b = 7 % 2; return 0; }",
+            False,
+            "tipo incompatível na inicialização da variável 'b'",
+            "Erro: Resultado do Módulo é Int"
+        ),
+        (
+            "int main() { int x = 1 / 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Inteiro"
+        ),
+        (
+            "int main() { float y = 1.0 / 0.0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Float"
+        ),
+        (
+            "int main() { int x = 1 % 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Módulo Por Zero"
+        ),
+        (
+            "int main() { int x = 1 / (0); return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão Por Zero Com Parênteses"
+        ),
+        (
+            "int main() { int x = 4; x /= 0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Atribuição Composta Por Zero"
+        ),
+        (
+            "int main() { int x = 1 / 2; return 0; }",
+            True,
+            None,
+            "Divisão Por Literal Não Zero"
+        ),
+        (
+            "int main() { float y = 1.0 / 0.5; return 0; }",
+            True,
+            None,
+            "Divisão Por Float Não Zero"
+        ),
+        (
+            "int main() { int x = 0 / 5; return 0; }",
+            True,
+            None,
+            "Zero Como Dividendo"
+        ),
+        (
+            "int main() { int z = 0; int x = 1 / z; return 0; }",
+            True,
+            None,
+            "Divisão Por Variável Não É Detectada"
+        ),
+        (
+            "int main() { int x = 1 * 0; return 0; }",
+            True,
+            None,
+            "Multiplicação Por Zero"
+        ),
+        (
+            "int main() { int x = 4; x /= 2; return 0; }",
+            True,
+            None,
+            "Atribuição Composta Por Não Zero"
+        ),
+        (
+            "int main() { int v[5]; if (v) {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Array Como Condição"
+        ),
+        (
+            "int main() { if (\"abc\") {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: String Como Condição"
+        ),
+        (
+            "int main() { if ('a') {} return 0; }",
+            False,
+            "condição do comando 'if' deve ser do tipo int, float ou bool",
+            "Erro: Char Como Condição"
+        ),
+        (
+            "int main() { float b = 1.0; if (b) {} return 0; }",
+            True,
+            None,
+            "Condição Float Válida"
+        ),
+        (
+            "int main() { int a = 1; if (a) {} return 0; }",
+            True,
+            None,
+            "Condição Int Válida"
+        ),
+
+        # Testes de retorno obrigatório (#76)
+        (
+            "int func_sem_retorno() { int a = 1; } int main() { return func_sem_retorno(); }",
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void Sem Comando 'return'"
+        ),
+        (
+            """
+            int func_if_sem_else(int x) {
+                if (x > 0) {
+                    return x;
+                }
+            }
+            int main() {
+                return func_if_sem_else(10);
+            }
+            """,
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void com 'if' Sem 'else'"
+        ),
+        (
+            """
+            int func_else_incompleto(int x) {
+                if (x > 0) {
+                    return 1;
+                } else {
+                    x = 0;
+                }
+            }
+            int main() {
+                return func_else_incompleto(10);
+            }
+            """,
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void com Ramo 'else' Sem Retorno"
+        ),
+        (
+            """
+            int func_cadeia_sem_else(int x) {
+                if (x > 0) {
+                    return 1;
+                } else if (x < 0) {
+                    return -1;
+                }
+            }
+            int main() {
+                return func_cadeia_sem_else(0);
+            }
+            """,
+            False,
+            "sem comando 'return' garantido em todos os caminhos",
+            "Erro: Função Não-Void com 'if-else-if' Sem 'else' Final"
+        ),
+        (
+            "int func_retorno_vazio() { return; } int main() { return func_retorno_vazio(); }",
+            False,
+            "função com retorno não-void requer expressão no 'return'",
+            "Erro: Retorno Sem Expressão em Função Não-Void"
+        ),
+
+        # Testes de verificação da função main (#78)
+        (
+            """
+            int soma(int a, int b) {
+                return a + b;
+            }
+            """,
+            False,
+            "função 'main' não declarada no escopo global",
+            "Erro: Programa Sem a Função 'main'"
+        ),
+        (
+            "int main = 10;",
+            False,
+            "o identificador 'main' deve ser uma função",
+            "Erro: 'main' Declarada Como Variável e Não Função"
+        ),
+        (
+            "float main() { return 1.5; }",
+            False,
+            "tipo de retorno da função 'main' deve ser 'int' ou 'void'",
+            "Erro: Função 'main' com Tipo de Retorno 'float'"
+        ),
+        (
+            "char main() { return 'a'; }",
+            False,
+            "tipo de retorno da função 'main' deve ser 'int' ou 'void'",
+            "Erro: Função 'main' com Tipo de Retorno 'char'"
+        ),
+        (
+            "bool main() { return true; }",
+            False,
+            "tipo de retorno da função 'main' deve ser 'int' ou 'void'",
+            "Erro: Função 'main' com Tipo de Retorno 'bool'"
+        ),
+
+        # Bateria de Testes Abrangentes de Robustez e Casos de Borda
+        (
+            "int main() { int v[5]; v[-1] = 1; return 0; }",
+            False,
+            "fora dos limites",
+            "Erro: Índice de Array Negativo Literal (-1)"
+        ),
+        (
+            "int main() { int v[5]; v[-5] = 1; return 0; }",
+            False,
+            "fora dos limites",
+            "Erro: Índice de Array Negativo Menor (-5)"
+        ),
+        (
+            "int main() { int v[5]; v[5] = 1; return 0; }",
+            False,
+            "fora dos limites",
+            "Erro: Índice de Array Igual ao Tamanho (Off-by-one)"
+        ),
+        (
+            "int main() { int v[5]; int i = 2; v[i] = 1; return 0; }",
+            True,
+            None,
+            "Válido: Acesso com Variável no Índice de Vetor"
+        ),
+        (
+            '''int f(int n) { if (n <= 0) return 0; return g(n - 1); }
+            int g(int n) { return f(n); }
+            int main() { return f(3); }''',
+            True,
+            None,
+            "Válido: Recursão Mútua (Forward Reference entre Funções)"
+        ),
+        (
+            '''int avalia(int x, int y) {
+                if (x > 0) {
+                    if (y > 0) { return 1; }
+                    else { return 2; }
+                } else {
+                    if (y > 0) { return 3; }
+                    else { return 4; }
+                }
+            }
+            int main() { return avalia(1, 1); }''',
+            True,
+            None,
+            "Válido: Retorno Completo em If-Else Aninhados Profundamente"
+        ),
+        (
+            '''int avalia(int x, int y) {
+                if (x > 0) {
+                    if (y > 0) { return 1; }
+                    else { return 2; }
+                } else {
+                    if (y > 0) { return 3; }
+                }
+            }
+            int main() { return avalia(1, 1); }''',
+            False,
+            "sem comando 'return' garantido",
+            "Erro: Retorno Faltante em Ramo Profundo de If-Else Aninhado"
+        ),
+        (
+            "int loop_ret(int a) { while (a > 0) { return 1; } } int main() { return loop_ret(2); }",
+            False,
+            "sem comando 'return' garantido",
+            "Erro: Função Não-Void Apenas com Retorno Dentro de While"
+        ),
+        (
+            "int loop_for(int n) { for (int i = 0; i < n; i += 1) { return i; } } int main() { return loop_for(2); }",
+            False,
+            "sem comando 'return' garantido",
+            "Erro: Função Não-Void Apenas com Retorno Dentro de For"
+        ),
+        (
+            "int soma_ate(int n) { int s = 0; for (int i = 0; i < n; i += 1) { s += i; } return s; } int main() { return soma_ate(5); }",
+            True,
+            None,
+            "Válido: Função Não-Void com Retorno Garantido Após Laço"
+        ),
+        (
+            "int g = 100; int main() { int g = 200; return g; }",
+            True,
+            None,
+            "Válido: Sombreamento de Variável Global por Variável Local"
+        ),
+        (
+            "int main() { 10.5 = 2.0; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Literal Float"
+        ),
+        (
+            "int main() { 'c' = 'd'; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Literal Char"
+        ),
+        (
+            'int main() { "msg" = "abc"; return 0; }',
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição a Literal String"
+        ),
+        (
+            "int f() { return 0; } int main() { f() += 5; return 0; }",
+            False,
+            "não é um l-value válido",
+            "Erro: Atribuição Composta a Chamada de Função"
+        ),
+        (
+            "int main() { float f = 10.5; f /= 0.0; return 0; }",
+            False,
+            "divisão por zero",
+            "Erro: Divisão por Zero em Atribuição Composta com Float"
+        ),
+        (
+            "int main() { int x = 3.14; return 0; }",
+            False,
+            "tipo incompatível na inicialização da variável 'x'",
+            "Erro: Atribuição de Float para Int Sem Cast Explícito"
+        ),
+        (
+            "int main() { int a = 5; float b = 2.5; float c = a + b; return 0; }",
+            True,
+            None,
+            "Válido: Coerção Aritmética de Int para Float em Expressão"
+        ),
+        (
+            "void logica(int a) { if (a < 0) { return; } a += 1; } int main() { logica(5); return 0; }",
+            True,
+            None,
+            "Válido: Função Void com Retorno Vazio Válido em Bloco Condicional"
+        ),
+        (
+            '''int fat(int n) {
+                if (n <= 1) {
+                    return 1;
+                } else {
+                    return n * fat(n - 1);
+                }
+            }
+            int main() { return fat(5); }''',
+            True,
+            None,
+            "Válido: Função Fatorial Recursiva Completa"
+        ),
+        (
+            '''int fib(int n) {
+                if (n <= 0) {
+                    return 0;
+                } else {
+                    if (n == 1) {
+                        return 1;
+                    } else {
+                        return fib(n - 1) + fib(n - 2);
+                    }
+                }
+            }
+            int main() { return fib(6); }''',
+            True,
+            None,
+            "Válido: Função Fibonacci Recursiva Completa"
+        ),
+        (
+            '''int busca(int n, int chave) {
+                int dados[5];
+                dados[0] = 10; dados[1] = 20; dados[2] = 30; dados[3] = 40; dados[4] = 50;
+                int pos = -1;
+                for (int i = 0; i < n; i += 1) {
+                    if (dados[i] == chave) {
+                        pos = i;
+                        break;
+                    }
+                }
+                return pos;
+            }
+            int main() {
+                return busca(5, 30);
+            }''',
+            True,
+            None,
+            "Válido: Algoritmo de Busca Linear em Vetor com Laço For e Break"
         )
     ]
 
     passed = 0
-    total = len(tests) + 1
+    total = len(tests) + 2
 
     if run_symbols_output_test():
+        passed += 1
+
+    if run_lvalue_ast_test():
         passed += 1
 
     for code, expect_success, expected_msg, name in tests:
@@ -244,6 +893,7 @@ def main():
 
     if passed != total:
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
