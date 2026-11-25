@@ -4,6 +4,7 @@
 #include <string.h>
 #include "scanner.h"
 #include "semantic.h"
+#include "codegen.h"
 
 extern int yylex();
 extern FILE *yyin;
@@ -453,6 +454,8 @@ int main(int argc, char **argv) {
     int print_ast = 0;
     int print_symbols = 0;
     int check_semantic = 0;
+    int generate_code = 0;
+    const char *output_path = NULL;
     char *filepath = NULL;
 
     for (int i = 1; i < argc; i++) {
@@ -468,6 +471,19 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[i], "--check") == 0 || strcmp(argv[i], "-c") == 0) {
             parse_mode = 1;
             check_semantic = 1;
+        } else if (strcmp(argv[i], "--codegen") == 0 || strcmp(argv[i], "-g") == 0) {
+            parse_mode = 1;
+            check_semantic = 1;
+            generate_code = 1;
+        } else if (strcmp(argv[i], "--output") == 0 || strcmp(argv[i], "-o") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Erro: a opção %s requer o caminho do arquivo de saída\n", argv[i]);
+                return 1;
+            }
+            parse_mode = 1;
+            check_semantic = 1;
+            generate_code = 1;
+            output_path = argv[++i];
         } else if (strcmp(argv[i], "--scan") == 0 || strcmp(argv[i], "-s") == 0) {
             parse_mode = 0;
         } else if (argv[i][0] != '-') {
@@ -511,6 +527,30 @@ int main(int argc, char **argv) {
 
             if (global_scope) {
                 symtab_free(global_scope);
+            }
+        }
+
+        /* A geração de código só ocorre com scanner, parser e semântica sem erros */
+        if (status == 0 && generate_code && ast_root) {
+            FILE *output = stdout;
+
+            if (output_path) {
+                output = fopen(output_path, "w");
+                if (!output) {
+                    perror(output_path);
+                    status = 1;
+                }
+            }
+
+            if (status == 0) {
+                if (codegen_generate(ast_root, output) != 0) {
+                    fprintf(stderr, "Erro: falha na geração do código Python\n");
+                    status = 1;
+                }
+            }
+
+            if (output && output != stdout) {
+                fclose(output);
             }
         }
 

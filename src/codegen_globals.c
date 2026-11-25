@@ -1,6 +1,8 @@
 #include "codegen_globals.h"
 #include <string.h>
 
+#define MAX_GLOBAL_NAMES 128
+
 typedef struct {
     const char *name;
 } GlobalName;
@@ -12,58 +14,97 @@ static bool contains_name(const GlobalName *names, int count, const char *name) 
     return false;
 }
 
-static bool is_global_name(const GlobalName *globals, int global_count,
-                          const char *name) {
-    return name && contains_name(globals, global_count, name);
+static int add_unique_name(GlobalName *names, int *count, int capacity,
+                           const char *name) {
+    if (!name || contains_name(names, *count, name)) return 0;
+    if (*count >= capacity) return -1;
+    names[(*count)++].name = name;
+    return 0;
 }
 
-static void collect_global_names(const ASTNode *node, GlobalName *globals,
-                                 int *count, int capacity) {
+static int collect_global_names(const ASTNode *node, GlobalName *globals,
+                                int *count, int capacity) {
     for (const ASTNode *curr = node; curr; curr = curr->next) {
-        if (curr->type == AST_VAR_DECL && curr->name &&
-            !contains_name(globals, *count, curr->name) && *count < capacity) {
-            globals[(*count)++].name = curr->name;
+        if (curr->type == AST_VAR_DECL && curr->name) {
+            if (add_unique_name(globals, count, capacity, curr->name) != 0) {
+                return -1;
+            }
         }
     }
+    return 0;
 }
 
-static void collect_assignment_target(const ASTNode *target,
-                                      const GlobalName *globals,
-                                      int global_count, GlobalName *used,
-                                      int *used_count, int capacity) {
-    if (!target) return;
+static int collect_shadowed_names(const ASTNode *node, GlobalName *shadowed,
+                                  int *count, int capacity) {
+    for (const ASTNode *curr = node; curr; curr = curr->next) {
+        if ((curr->type == AST_PARAM_DECL || curr->type == AST_VAR_DECL) &&
+            curr->name) {
+            if (add_unique_name(shadowed, count, capacity, curr->name) != 0) {
+                return -1;
+            }
+        }
+        if (curr->left &&
+            collect_shadowed_names(curr->left, shadowed, count, capacity) != 0) {
+            return -1;
+        }
+        if (curr->right &&
+            collect_shadowed_names(curr->right, shadowed, count, capacity) != 0) {
+            return -1;
+        }
+        if (curr->extra &&
+            collect_shadowed_names(curr->extra, shadowed, count, capacity) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int collect_assignment_target(const ASTNode *target,
+                                     const GlobalName *globals, int global_count,
+                                     const GlobalName *shadowed, int shadowed_count,
+                                     GlobalName *used, int *used_count,
+                                     int capacity) {
+    if (!target) return 0;
 
     const ASTNode *base = target;
     if (target->type == AST_ARRAY_ACCESS) base = target->left;
 
-    if (base && base->type == AST_IDENTIFIER &&
-        is_global_name(globals, global_count, base->name) &&
-        !contains_name(used, *used_count, base->name) && *used_count < capacity) {
-        used[(*used_count)++].name = base->name;
+    if (base && base->type == AST_IDENTIFIER && base->name &&
+        contains_name(globals, global_count, base->name) &&
+        !contains_name(shadowed, shadowed_count, base->name)) {
+        return add_unique_name(used, used_count, capacity, base->name);
     }
+    return 0;
 }
 
-static void collect_assignments(const ASTNode *node, const GlobalName *globals,
-                                int global_count, GlobalName *used,
-                                int *used_count, int capacity) {
+static int collect_assignments(const ASTNode *node, const GlobalName *globals,
+                               int global_count, const GlobalName *shadowed,
+                               int shadowed_count, GlobalName *used,
+                               int *used_count, int capacity) {
     for (const ASTNode *curr = node; curr; curr = curr->next) {
-        if (curr->type == AST_ASSIGN) {
+        if (curr->type == AST_ASSIGN &&
             collect_assignment_target(curr->left, globals, global_count,
-                                       used, used_count, capacity);
+                                      shadowed, shadowed_count, used,
+                                      used_count, capacity) != 0) {
+            return -1;
         }
-        if (curr->left) {
-            collect_assignments(curr->left, globals, global_count, used,
-                                used_count, capacity);
+        if (curr->left &&
+            collect_assignments(curr->left, globals, global_count, shadowed,
+                                shadowed_count, used, used_count, capacity) != 0) {
+            return -1;
         }
-        if (curr->right) {
-            collect_assignments(curr->right, globals, global_count, used,
-                                used_count, capacity);
+        if (curr->right &&
+            collect_assignments(curr->right, globals, global_count, shadowed,
+                                shadowed_count, used, used_count, capacity) != 0) {
+            return -1;
         }
-        if (curr->extra) {
-            collect_assignments(curr->extra, globals, global_count, used,
-                                used_count, capacity);
+        if (curr->extra &&
+            collect_assignments(curr->extra, globals, global_count, shadowed,
+                                shadowed_count, used, used_count, capacity) != 0) {
+            return -1;
         }
     }
+    return 0;
 }
 
 int codegen_emit_function_globals(FILE *out, const ASTNode *function,
@@ -73,13 +114,28 @@ int codegen_emit_function_globals(FILE *out, const ASTNode *function,
         return -1;
     }
 
-    GlobalName globals[128] = {0};
-    GlobalName used[128] = {0};
+    GlobalName globals[MAX_GLOBAL_NAMES] = {0};
+    GlobalName shadowed[MAX_GLOBAL_NAMES] = {0};
+    GlobalName used[MAX_GLOBAL_NAMES] = {0};
     int global_count = 0;
+    int shadowed_count = 0;
     int used_count = 0;
-    collect_global_names(global_declarations, globals, &global_count, 128);
-    collect_assignments(function->right, globals, global_count, used,
-                        &used_count, 128);
+
+    if (collect_global_names(global_declarations, globals, &global_count,
+                             MAX_GLOBAL_NAMES) != 0) {
+        return -1;
+    }
+    if (collect_shadowed_names(function->left, shadowed, &shadowed_count,
+                               MAX_GLOBAL_NAMES) != 0 ||
+        collect_shadowed_names(function->right, shadowed, &shadowed_count,
+                               MAX_GLOBAL_NAMES) != 0) {
+        return -1;
+    }
+    if (collect_assignments(function->right, globals, global_count, shadowed,
+                            shadowed_count, used, &used_count,
+                            MAX_GLOBAL_NAMES) != 0) {
+        return -1;
+    }
 
     if (used_count == 0) return 0;
 

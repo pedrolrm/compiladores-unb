@@ -40,17 +40,49 @@ int main(void) {
     check(out, "    global total\n");
     fclose(out);
 
+    /* Parâmetro com mesmo nome da global não pode gerar `global` */
+    ASTNode param = {0};
+    param.type = AST_PARAM_DECL;
+    param.name = "total";
+    function.left = &param;
+    out = tmpfile();
+    assert(out != NULL);
+    assert(codegen_emit_function_globals(out, &function, &global, 1) == 0);
+    check(out, "");
+    fclose(out);
+    function.left = NULL;
+
+    /* Variável local com mesmo nome da global não pode gerar `global` */
+    ASTNode local_decl = {0};
+    local_decl.type = AST_VAR_DECL;
+    local_decl.name = "total";
+    local_decl.next = &assignment;
+    body.left = &local_decl;
+    out = tmpfile();
+    assert(out != NULL);
+    assert(codegen_emit_function_globals(out, &function, &global, 1) == 0);
+    check(out, "");
+    fclose(out);
+    body.left = &assignment;
+
+    /* Atribuição em variável local não declarada como global */
     target.name = "local";
     out = tmpfile();
+    assert(out != NULL);
     assert(codegen_emit_function_globals(out, &function, &global, 0) == 0);
     check(out, "");
     fclose(out);
 
     out = tmpfile();
+    assert(out != NULL);
     assert(codegen_emit_python_entrypoint(out) == 0);
     check(out, "if __name__ == '__main__':\n    import sys\n    sys.exit(main())\n");
     fclose(out);
 
+    assert(codegen_emit_function_globals(NULL, &function, &global, 0) == -1);
+    assert(codegen_emit_function_globals(out, NULL, &global, 0) == -1);
+    assert(codegen_emit_function_globals(out, &body, &global, 0) == -1);
+    assert(codegen_emit_function_globals(out, &function, &global, -1) == -1);
     assert(codegen_emit_python_entrypoint(NULL) == -1);
     puts("Codegen #83: globais e ponto de entrada aprovados.");
     return 0;
