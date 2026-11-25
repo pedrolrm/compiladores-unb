@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Isrc
 
-SRCS = src/ast.c src/symtab.c src/semantic.c
+SRCS = src/ast.c src/symtab.c src/semantic.c src/codegen.c
 
 all: compilador
 
