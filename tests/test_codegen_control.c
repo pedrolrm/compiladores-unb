@@ -5,7 +5,9 @@
 
 static const char *expr_text;
 static int emit_expr(FILE *out, const ASTNode *expr) {
-    (void)expr;
+    if (expr->type == AST_LIT_INT) {
+        return fprintf(out, "%d", expr->int_val) < 0 ? -1 : 0;
+    }
     return fputs(expr_text, out) == EOF ? -1 : 0;
 }
 
@@ -23,6 +25,7 @@ int main(void) {
     condition.type = AST_LIT_BOOL;
     ASTNode ret_value = {0};
     ret_value.type = AST_LIT_INT;
+    ret_value.int_val = 5;
     ASTNode ret = {0};
     ret.type = AST_RETURN;
     ret.left = &ret_value;
