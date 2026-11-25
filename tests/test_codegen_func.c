@@ -14,8 +14,8 @@ static void emit_indent(FILE *out, int indent_level) {
 }
 
 /*
- * Emissor de comandos mínimo para os testes: cobre blocos, atribuições,
- * return, while e as definições de função aninhadas pelo módulo testado.
+ * Emissor de comandos mínimo para os testes: blocos, atribuições, return,
+ * while e as definições de função aninhadas pelo módulo testado.
  */
 static int emit_statement(FILE *out, const ASTNode *s, int indent_level) {
     switch (s->type) {
@@ -27,32 +27,14 @@ static int emit_statement(FILE *out, const ASTNode *s, int indent_level) {
             }
             return 0;
 
-        case AST_VAR_DECL:
-            emit_indent(out, indent_level);
-            fprintf(out, "%s = ", s->name);
-            if (s->left) {
-                if (codegen_emit_expression(out, s->left) != 0) return -1;
-            } else {
-                fputc('0', out);
-            }
-            fputc('\n', out);
-            return 0;
-
         case AST_EXPR_STMT:
-            if (s->left->type == AST_ASSIGN) {
-                return codegen_emit_assignment(out, s->left, indent_level);
-            }
-            emit_indent(out, indent_level);
-            if (codegen_emit_expression(out, s->left) != 0) return -1;
-            fputc('\n', out);
-            return 0;
+            return codegen_emit_assignment(out, s->left, indent_level);
 
         case AST_RETURN:
             emit_indent(out, indent_level);
-            fputs("return", out);
-            if (s->left) {
-                fputc(' ', out);
-                if (codegen_emit_expression(out, s->left) != 0) return -1;
+            fputs("return ", out);
+            if (codegen_emit_expression(out, s->left) != 0) {
+                return -1;
             }
             fputc('\n', out);
             return 0;
@@ -68,6 +50,7 @@ static int emit_statement(FILE *out, const ASTNode *s, int indent_level) {
     }
 }
 
+/* Emissor que falha sempre, para verificar a propagação de erro do corpo. */
 static int fail_statement(FILE *out, const ASTNode *s, int indent_level) {
     (void)out;
     (void)s;
@@ -96,6 +79,7 @@ static void check_function(ASTNode *function, int indent_level, const char *expe
 }
 
 /* Construtores auxiliares com os tipos que a análise semântica atribuiria */
+
 static DataType int_type(void) {
     return data_type_primitive(TYPE_INT);
 }
@@ -126,48 +110,50 @@ static ASTNode *func(const char *name, ASTNode *params, ASTNode *body) {
     return ast_create_func_def(int_type(), name, params, body, 1, 1);
 }
 
+/* int zero(void) { return 0; } */
 static void test_sem_parametros(void) {
-    /* int zero(void) { return 0; } */
     check_function(func("zero", NULL, block(ast_create_return(lit(0), 1, 1))), 0,
                    "def zero():\n"
                    "    return 0\n");
 }
 
+/* int soma(int a, int b, int c) { return a + b + c; } */
 static void test_multiplos_parametros(void) {
-    /* int soma(int a, int b, int c) { return a + b + c; } */
     ASTNode *params = ast_append_sibling(ast_append_sibling(param("a"), param("b")), param("c"));
-    check_function(func("soma", params,
-                        block(ast_create_return(bin(OP_PLUS, bin(OP_PLUS, var("a"), var("b")),
-                                                    var("c")), 1, 1))), 0,
+    ASTNode *soma = bin(OP_PLUS, bin(OP_PLUS, var("a"), var("b")), var("c"));
+
+    check_function(func("soma", params, block(ast_create_return(soma, 1, 1))), 0,
                    "def soma(a, b, c):\n"
                    "    return ((a + b) + c)\n");
 }
 
+/* void nada(int a) { }, e o caso de corpo ausente na AST, geram pass */
 static void test_corpo_vazio(void) {
-    /* void nada(int a) { } */
     check_function(func("nada", param("a"), block(NULL)), 0,
                    "def nada(a):\n"
                    "    pass\n");
 
-    /* Corpo ausente na AST também gera pass */
     check_function(func("nada", NULL, NULL), 0,
                    "def nada():\n"
                    "    pass\n");
 }
 
+/* Comandos internos sobem um nível a partir do nível da definição */
 static void test_indentacao_do_corpo(void) {
-    /* Comandos internos sobem um nível a partir do nível da definição */
-    check_function(func("acumula", param("n"),
-                        block(ast_create_while(bin(OP_GT, var("n"), lit(0)),
-                                               block(ast_create_expr_stmt(
-                                                   ast_create_assign(OP_MINUS_ASSIGN, var("n"),
-                                                                     lit(1), 1, 1), 1, 1)),
-                                               1, 1))), 1,
+    ASTNode *passo = ast_create_assign(OP_MINUS_ASSIGN, var("n"), lit(1), 1, 1);
+    ASTNode *laco = ast_create_while(bin(OP_GT, var("n"), lit(0)),
+                                     block(ast_create_expr_stmt(passo, 1, 1)), 1, 1);
+
+    check_function(func("acumula", param("n"), block(laco)), 1,
                    "    def acumula(n):\n"
                    "        while (n > 0):\n"
                    "            n -= 1\n");
 }
 
+/*
+ * Nó inválido, callback ausente, nível negativo, falha propagada do corpo,
+ * nó que não é definição de função e nomes ausentes são rejeitados com -1.
+ */
 static void test_errors(void) {
     FILE *out = tmpfile();
     assert(out != NULL);
@@ -177,17 +163,13 @@ static void test_errors(void) {
     assert(codegen_emit_function(out, NULL, 0, emit_statement) == -1);
     assert(codegen_emit_function(out, function, 0, NULL) == -1);
     assert(codegen_emit_function(out, function, -1, emit_statement) == -1);
-
-    /* Falha no corpo é propagada */
     assert(codegen_emit_function(out, function, 0, fail_statement) == -1);
     ast_free(function);
 
-    /* Nó que não é definição de função */
     ASTNode *not_function = block(NULL);
     assert(codegen_emit_function(out, not_function, 0, emit_statement) == -1);
     ast_free(not_function);
 
-    /* Função sem nome e parâmetro sem nome são rejeitados */
     ASTNode *unnamed = func(NULL, NULL, block(NULL));
     assert(codegen_emit_function(out, unnamed, 0, emit_statement) == -1);
     ast_free(unnamed);
