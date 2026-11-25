@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Isrc
 
-SRCS = src/ast.c src/symtab.c src/semantic.c src/codegen_expr.c src/codegen_loops.c
+SRCS = src/ast.c src/symtab.c src/semantic.c src/codegen_expr.c src/codegen_loops.c src/codegen_func.c
 
 all: compilador
 
@@ -22,6 +22,8 @@ test: compilador
 	./tests/_temp_codegen_expr
 	$(CC) $(CFLAGS) -o tests/_temp_codegen_loops tests/test_codegen_loops.c src/codegen_loops.c src/codegen_expr.c src/ast.c
 	./tests/_temp_codegen_loops
+	$(CC) $(CFLAGS) -o tests/_temp_codegen_func tests/test_codegen_func.c src/codegen_func.c src/codegen_loops.c src/codegen_expr.c src/ast.c
+	./tests/_temp_codegen_func
 
 clean:
 	rm -f compilador src/lex.yy.c src/parser.tab.c src/parser.tab.h
