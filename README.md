@@ -41,6 +41,10 @@ Para compilar e executar o projeto localmente, você precisará de:
    - `--ast` (`-a`): Exibe a Árvore Sintática Abstrata (AST) formatada.
    - `--symbols` (`-t`): Exibe a Tabela de Símbolos hierárquica por escopos.
    - `--check` (`-c`): Executa a validação sintática e semântica completa.
+   - `--codegen` (`-g`): Executa a validação completa e emite o código Python 3 na saída padrão.
+   - `--output <arquivo.py>` (`-o`): Grava o código Python 3 gerado no arquivo informado.
+
+   A geração de código só ocorre quando o scanner, o parser e o analisador semântico concluem sem erros; caso contrário o compilador aborta com código de saída diferente de 0.
 
 3. Para executar as suítes de testes automatizados:
    ```bash
