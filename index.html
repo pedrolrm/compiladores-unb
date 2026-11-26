@@ -585,17 +585,19 @@
 <p>Bem-vindo à documentação oficial do projeto prático desenvolvido para a disciplina de <strong>Compiladores</strong> da <strong>Universidade de Brasília (UnB)</strong>.</p>
 <hr />
 <h2 id="visao-geral-do-projeto">Visão Geral do Projeto</h2>
-<p>O objetivo deste projeto é o desenvolvimento de um compilador/transpilador com <em>frontend</em> construído utilizando <strong>C</strong>, <strong>Flex</strong> e <strong>Bison</strong>. O compilador tem como meta processar uma linguagem fonte (um subconjunto expressivo e simplificado de <strong>C</strong>) e realizar a análise e geração de código alvo para <strong>Python</strong>.</p>
+<p>O objetivo deste projeto é o desenvolvimento de um compilador/transpilador com <em>frontend</em> construído utilizando <strong>C</strong>, <strong>Flex</strong> e <strong>Bison</strong>. O compilador tem como meta processar uma linguagem fonte (um subconjunto expressivo e simplificado de <strong>C</strong>) e realizar a análise e geração de código alvo para <strong>Python 3</strong>.</p>
 <h3 id="recursos-suportados-pela-linguagem">Recursos Suportados pela Linguagem</h3>
 <ul>
 <li><strong>Tipos de dados primitivos:</strong> <code>int</code>, <code>float</code>, <code>char</code>, <code>bool</code> e <code>void</code>.</li>
-<li><strong>Estruturas de controle de fluxo:</strong> condicionais (<code>if</code>, <code>else</code>, <code>switch</code>, <code>case</code>, <code>default</code>) e laços (<code>while</code>, <code>for</code>, <code>break</code>, <code>continue</code>).</li>
-<li><strong>Funções e recursão:</strong> declaração e definição de funções com múltiplos parâmetros, retorno de valores e chamadas recursivas.</li>
-<li><strong>Tipos estruturados e agregados:</strong> estruturas (<code>struct</code>) e vetores (<code>arrays</code>) com indexação e acesso a membros.</li>
-<li><strong>Operadores:</strong> aritméticos, relacionais, lógicos, de incremento/decremento e atribuição composta.</li>
+<li><strong>Coerção e compatibilidade:</strong> Promoção implícita de <code>int</code> para <code>float</code> em atribuições e expressões aritméticas.</li>
+<li><strong>Estruturas de controle de fluxo:</strong> Condicionais (<code>if</code>, <code>if-else</code>) e laços de repetição (<code>while</code>, <code>for</code>, <code>break</code>, <code>continue</code>).</li>
+<li><strong>Funções e recursão:</strong> Declaração e definição de funções com múltiplos parâmetros, retorno obrigatório em funções não-void, recursão simples e recursão mútua.</li>
+<li><strong>Vetores unidimensionais (1D):</strong> Declaração estática (<code>int v[10]</code>), inferência por literal string (<code>char s[] = "oi"</code>) e indexação com checagem estática de limites.</li>
+<li><strong>Operadores:</strong> Aritméticos (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>), relacionais (<code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>), lógicos (<code>&amp;&amp;</code>, <code>||</code>, <code>!</code>) e atribuições compostas (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>).</li>
+<li><strong>Ponto de entrada:</strong> Validação obrigatória da função <code>main</code> no escopo global.</li>
 </ul>
 <blockquote>
-<p><strong>Decisão de Arquitetura:</strong> Para garantir um escopo viável e foco na robustez da pipeline e na tradução para Python, a linguagem <strong>não</strong> implementa manipulação direta de memória e ponteiros (<code>malloc</code>, <code>free</code>, <code>*ptr</code>, <code>&amp;var</code>), restringindo variáveis e estruturas a escopos estáticos e locais.</p>
+<p><strong>Decisão de Arquitetura:</strong> Para viabilizar a transpilação direta e idiomática para Python sem a necessidade de simular um emulador de memória RAM, a linguagem <strong>não</strong> implementa manipulação direta de ponteiros (<code>malloc</code>, <code>free</code>, <code>*ptr</code>, <code>&amp;var</code>), <code>structs</code>, <code>switch-case</code> nem sombreamento de variáveis dentro do escopo da função. Consulte <a href="decisoes/">Decisões de Projeto</a> para o detalhamento técnico.</p>
 </blockquote>
 <hr />
 <h2 id="estrutura-da-pipeline">Estrutura da Pipeline</h2>
@@ -603,20 +605,21 @@
     A["Código Fonte (.c)"] --&gt; B["Analisador Léxico (Flex)"]
     B --&gt; C["Analisador Sintático (Bison)"]
     C --&gt; D["Analisador Semântico &amp; AST"]
-    D --&gt; E["Geração de Código (Python)"]</code></pre>
+    D --&gt; E["Geração de Código (Python 3)"]</code></pre>
 <ol>
 <li><strong>Analisador Léxico (Scanner):</strong> Responsável pela conversão do fluxo de caracteres em tokens padronizados, descarte de comentários/espaços e reporte detalhado de erros léxicos com linha e coluna.</li>
-<li><strong>Analisador Sintático (Parser):</strong> Aplica a Gramática Livre de Contexto (GLC) sobre os tokens, validando a estrutura sintática das declarações, comandos e expressões.</li>
-<li><strong>Analisador Semântico:</strong> Construção da Árvore Sintática Abstrata (AST), tabela de símbolos e checagem estática de tipos e escopos.</li>
-<li><strong>Geração de Código:</strong> Tradução da representação intermediária/AST para código executável em <strong>Python</strong>.</li>
+<li><strong>Analisador Sintático (Parser):</strong> Aplica a Gramática Livre de Contexto (GLC) sobre os tokens, validando a estrutura sintática das declarações, comandos e expressões, instanciando a AST.</li>
+<li><strong>Analisador Semântico:</strong> Resolução de escopos hierárquicos via Tabela de Símbolos, validação de l-values, segurança aritmética, detecção estática de divisão por zero, limites de vetores, análise de fluxo de retorno e ponto de entrada <code>main</code>.</li>
+<li><strong>Geração de Código:</strong> Tradução da representação intermediária/AST para código executável e idiomático em <strong>Python 3</strong>.</li>
 </ol>
 <hr />
 <h2 id="guias-e-especificacoes">Guias e Especificações</h2>
 <p>Navegue pela documentação técnica através das seções:</p>
 <ul>
-<li><a href="decisoes/"><strong>Decisões de Projeto</strong></a>: Registro das decisões de arquitetura e justificativa detalhada da não implementação de gerenciamento de memória e ponteiros.</li>
+<li><a href="decisoes/"><strong>Decisões de Projeto</strong></a>: Registro das decisões de arquitetura e justificativa técnica da exclusão de ponteiros, structs e switch-case.</li>
 <li><a href="tokens/"><strong>Especificação Léxica (Tokens e Expressões Regulares)</strong></a>: Tabela de palavras reservadas, operadores, literais e validação das expressões regulares do Flex.</li>
 <li><a href="gramatica/"><strong>Gramática Livre de Contexto (GLC)</strong></a>: Especificação formal em EBNF de todas as produções sintáticas implementadas no Bison.</li>
+<li><a href="ast_e_tabela_simbolos/"><strong>Árvore Sintática Abstrata (AST) e Tabela de Símbolos</strong></a>: Estrutura de nós da AST, tabela de símbolos com múltiplos escopos, regras completas do analisador semântico e CLI.</li>
 </ul>
 
 
