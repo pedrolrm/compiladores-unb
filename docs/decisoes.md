@@ -98,6 +98,6 @@ Com a conclusão do front-end básico e a preparação da etapa de **Geração d
 
 ### Conclusão e Benefícios
 Essa refatoração garantiu que:
-1. O compilador permaneça com **zero vazamentos de memória e 100% de testes automatizados aprovados**;
-2. A Tabela de Símbolos e a AST fiquem diretamente alinhadas à arquitetura do futuro gerador de código (`src/codegen.c`);
+1. O compilador permaneça com **zero vazamentos de memória no fluxo válido/semântico e 100% de testes automatizados aprovados**;
+2. A Tabela de Símbolos e a AST fiquem diretamente alinhadas à arquitetura do gerador de código (`src/codegen.c`);
 3. A equipe possa implementar o gerador de código manualmente em C de forma limpa, direta e depurável.

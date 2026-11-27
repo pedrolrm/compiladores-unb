@@ -45,4 +45,5 @@ Navegue pela documentação técnica através das seções:
 - [**Decisões de Projeto**](decisoes.md): Registro das decisões de arquitetura e justificativa técnica da exclusão de ponteiros, structs e switch-case.
 - [**Especificação Léxica (Tokens e Expressões Regulares)**](tokens.md): Tabela de palavras reservadas, operadores, literais e validação das expressões regulares do Flex.
 - [**Gramática Livre de Contexto (GLC)**](gramatica.md): Especificação formal em EBNF de todas as produções sintáticas implementadas no Bison.
-- [**Árvore Sintática Abstrata (AST) e Tabela de Símbolos**](ast_e_tabela_simbolos.md): Estrutura de nós da AST, tabela de símbolos com múltiplos escopos, regras completas do analisador semântico e CLI.
+- [**AST e Tabela de Símbolos**](ast_e_tabela_simbolos.md): Estrutura de nós da AST, tabela de símbolos com múltiplos escopos, regras completas do analisador semântico e CLI.
+- [**Geração de Código (Python 3)**](codegen.md): Arquitetura modular do gerador de código, regras de tradução C → Python 3, tratamento de globais, laços e suíte de testes E2E.
