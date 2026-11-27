@@ -328,6 +328,290 @@ TESTS = [
         None,
         "Variáveis globais, sombreamento por parâmetro e função vazia (15 + 101 = 116)",
     ),
+    (
+        open(os.path.join(os.path.dirname(__file__), "example.c"), encoding="utf-8").read(),
+        0,
+        None,
+        "Programa completo tests/example.c (float, char, char[] inferido, if)",
+    ),
+    (
+        """
+        int main() {
+            char s[] = "oi";
+            if (s[0] == 'o' && s[1] == 'i') {
+                s[1] = 'k';
+                if (s[1] == 'k') {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+        """,
+        1,
+        None,
+        "Vetor char[] com tamanho inferido por string, leitura e mutação",
+    ),
+    (
+        """
+        void noop(void) {
+            return;
+        }
+        int main(void) {
+            noop();
+            return 9;
+        }
+        """,
+        9,
+        None,
+        "Funções com lista de parâmetros (void)",
+    ),
+    (
+        """
+        int main() {
+            int a = 1, b = 2, c;
+            c = a + b + 4;
+            return c;
+        }
+        """,
+        7,
+        None,
+        "Múltiplos declaradores na mesma linha com valor padrão",
+    ),
+    (
+        """
+        float media(float a, float b) {
+            return (a + b) / 2.0;
+        }
+        int main() {
+            float m = media(3, 5);
+            if (m == 4.0) {
+                return 1;
+            }
+            return 0;
+        }
+        """,
+        1,
+        None,
+        "Promoção implícita int -> float em parâmetros e expressão",
+    ),
+    (
+        """
+        int main() {
+            int x = 100;
+            x -= 20;
+            x *= 2;
+            x /= 5;
+            float f = 9.0;
+            f /= 2;
+            if (x == 32 && f == 4.5) {
+                return x;
+            }
+            return 0;
+        }
+        """,
+        32,
+        None,
+        "Atribuições compostas (-=, *=, /= inteiro -> //= e /= float -> /=)",
+    ),
+    (
+        """
+        int main() {
+            int x = 0;
+            if (false && (10 / x == 0)) {
+                return 1;
+            }
+            if (true || (10 / x == 0)) {
+                return 2;
+            }
+            return 0;
+        }
+        """,
+        2,
+        None,
+        "Avaliação em curto-circuito de && e ||",
+    ),
+    (
+        """
+        int classifica(int n) {
+            if (n > 0)
+                if (n % 2 == 0)
+                    return 2;
+                else
+                    return 1;
+            else
+                return 0;
+        }
+        int main() {
+            return classifica(4) * 10 + classifica(3);
+        }
+        """,
+        21,
+        None,
+        "Dangling else preservado corretamente em Python",
+    ),
+    (
+        """
+        int main() {
+            int total = 0;
+            for (int i = 0; i < 4; i += 1) {
+                for (int j = 0; j < 4; j += 1) {
+                    if (j == 2) {
+                        break;
+                    }
+                    total += 1;
+                }
+            }
+            return total;
+        }
+        """,
+        8,
+        None,
+        "Laços aninhados: break afeta apenas o laço mais interno (4 * 2 = 8)",
+    ),
+    (
+        """
+        int main() {
+            int v[5];
+            v[0] = 5; v[1] = 2; v[2] = 4; v[3] = 1; v[4] = 3;
+            for (int i = 0; i < 5; i += 1) {
+                for (int j = 0; j < 4 - i; j += 1) {
+                    if (v[j] > v[j + 1]) {
+                        int tmp = v[j];
+                        v[j] = v[j + 1];
+                        v[j + 1] = tmp;
+                    }
+                }
+            }
+            return v[0] * 100 + v[2] * 10 + v[4];
+        }
+        """,
+        135,
+        None,
+        "Algoritmo completo: Bubble Sort em vetor 1D",
+    ),
+    (
+        """
+        int main() {
+            int v[6];
+            v[0] = 2; v[1] = 5; v[2] = 9; v[3] = 14; v[4] = 20; v[5] = 31;
+            int alvo = 20;
+            int esq = 0;
+            int dir = 5;
+            int achou = -1;
+            while (esq <= dir) {
+                int meio = (esq + dir) / 2;
+                if (v[meio] == alvo) {
+                    achou = meio;
+                    break;
+                } else if (v[meio] < alvo) {
+                    esq = meio + 1;
+                } else {
+                    dir = meio - 1;
+                }
+            }
+            return achou;
+        }
+        """,
+        4,
+        None,
+        "Algoritmo completo: Busca Binária em vetor ordenado",
+    ),
+    (
+        """
+        int mdc(int a, int b) {
+            while (b != 0) {
+                int r = a % b;
+                a = b;
+                b = r;
+            }
+            return a;
+        }
+        int main() {
+            return mdc(48, 18);
+        }
+        """,
+        6,
+        None,
+        "Algoritmo completo: Máximo Divisor Comum (Euclides)",
+    ),
+    (
+        """
+        bool eh_primo(int n) {
+            if (n < 2) return false;
+            for (int d = 2; d * d <= n; d += 1) {
+                if (n % d == 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        int main() {
+            int cont = 0;
+            for (int i = 1; i <= 20; i += 1) {
+                if (eh_primo(i)) {
+                    cont += 1;
+                }
+            }
+            return cont;
+        }
+        """,
+        8,
+        None,
+        "Algoritmo completo: Contagem de números primos até 20 (8 primos)",
+    ),
+    (
+        """
+        int gv[3];
+        void preenche() {
+            gv[0] = 10;
+            gv[1] = 20;
+            gv[2] = 30;
+        }
+        int main() {
+            preenche();
+            return gv[0] + gv[1] + gv[2];
+        }
+        """,
+        60,
+        None,
+        "Vetor global modificado dentro de função auxiliar",
+    ),
+    (
+        """
+        int g = 5;
+        int f(int x) {
+            int g = 20;
+            return g + x;
+        }
+        int main() {
+            int r = f(3);
+            return g + r;
+        }
+        """,
+        28,
+        None,
+        "Sombreamento de variável global por variável local (sem global)",
+    ),
+    (
+        """
+        int main() {
+            int i;
+            float f;
+            char c;
+            bool b;
+            if (i == 0 && f == 0.0 && !b) {
+                c = 'Z';
+                if (c == 'Z') {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+        """,
+        1,
+        None,
+        "Valores padrão de variáveis locais sem inicializador",
+    ),
 ]
 
 

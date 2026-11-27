@@ -871,6 +871,150 @@ def main():
             True,
             None,
             "Válido: Algoritmo de Busca Linear em Vetor com Laço For e Break"
+        ),
+        (
+            '''void ping(void) { return; }
+            int main(void) {
+                ping();
+                return 0;
+            }''',
+            True,
+            None,
+            "Válido: Funções com Lista de Parâmetros (void)"
+        ),
+        (
+            '''int main() {
+                int a = 1, b = a + 2, c;
+                c = a + b;
+                return c;
+            }''',
+            True,
+            None,
+            "Válido: Múltiplos Declaradores na Mesma Linha"
+        ),
+        (
+            '''int main() {
+                char s[] = "abc";
+                char c0 = s[0];
+                char c2 = s[2];
+                return 0;
+            }''',
+            True,
+            None,
+            "Válido: Indexação dentro dos Limites em char[] Inferido"
+        ),
+        (
+            '''int main() {
+                char s[4];
+                char c = s[4];
+                return 0;
+            }''',
+            False,
+            "fora dos limites",
+            "Erro: Acesso Fora dos Limites em Vetor char[4]"
+        ),
+        (
+            '''int main() {
+                bool flags[3];
+                float notas[4];
+                flags[0] = true;
+                notas[3] = 10;
+                return 0;
+            }''',
+            True,
+            None,
+            "Válido: Vetores bool e float e Coerção em Elemento"
+        ),
+        (
+            '''float dobro(float x) { return x * 2.0; }
+            int main() {
+                float r = dobro(5);
+                return 0;
+            }''',
+            True,
+            None,
+            "Válido: Promoção Implícita de int para Parâmetro float"
+        ),
+        (
+            '''float converte(int x) { return x; }
+            int main() {
+                float y = converte(7);
+                return 0;
+            }''',
+            True,
+            None,
+            "Válido: Promoção Implícita de int para Retorno float"
+        ),
+        (
+            '''int trunca() { return 3.5; }
+            int main() { return 0; }''',
+            False,
+            "incompatível",
+            "Erro: Retorno float em Função int"
+        ),
+        (
+            '''int f(int x) { return x; }
+            int main() { return f(3.5); }''',
+            False,
+            "incompatível",
+            "Erro: Passagem de Argumento float para Parâmetro int"
+        ),
+        (
+            '''int main() {
+                int x = 1;
+                return x(2);
+            }''',
+            False,
+            "não é uma função",
+            "Erro: Chamada de Variável como Função"
+        ),
+        (
+            '''int main() { return inexistente(1); }''',
+            False,
+            "não declarada",
+            "Erro: Chamada de Função Não Declarada"
+        ),
+        (
+            '''void nada() {}
+            int main() {
+                int x = nada();
+                return 0;
+            }''',
+            False,
+            "incompatível",
+            "Erro: Uso de Retorno void em Inicialização de Variável"
+        ),
+        (
+            '''int main() {
+                int x = "texto";
+                return 0;
+            }''',
+            False,
+            "incompatível",
+            "Erro: Atribuição de Literal String a int"
+        ),
+        (
+            '''int main() {
+                int x = 'a';
+                return 0;
+            }''',
+            False,
+            "incompatível",
+            "Erro: Atribuição de Literal Char a int"
+        ),
+        (
+            '''int main() {
+                int i = 0;
+                for (;;) {
+                    i += 1;
+                    if (i == 3) continue;
+                    if (i == 5) break;
+                }
+                return i;
+            }''',
+            True,
+            None,
+            "Válido: Laço for(;;) com continue e break"
         )
     ]
 

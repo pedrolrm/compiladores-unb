@@ -78,6 +78,41 @@ def main():
             "bool checa(bool a, bool b) { return !a && (b || false); }",
             ["FuncDef: checa (Return: bool)", "BinOp: &&", "UnOp: !", "BinOp: ||", "LiteralBool: false"],
             "Expressões Lógicas e Booleanas na AST (!, &&, ||)"
+        ),
+        (
+            "void noop(void) { return; }",
+            ["FuncDef: noop (Return: void)", "Return"],
+            "Função Void com Lista de Parâmetros (void)"
+        ),
+        (
+            "int g = 1; int main() { int a = 1, b, c = 3; return a + c; }",
+            ["VarDecl: g (Type: int)", "VarDecl: a (Type: int)", "VarDecl: b (Type: int)", "VarDecl: c (Type: int)"],
+            "Declaração Global e Múltiplos Declaradores na Mesma Linha"
+        ),
+        (
+            "int main() { if (a) if (b) return 1; else return 2; return 0; }",
+            ["If", "Then:", "Else:", "LiteralInt: 1", "LiteralInt: 2"],
+            "Desambiguação de Dangling Else na AST"
+        ),
+        (
+            "int main() { for (;;) { break; } return 0; }",
+            ["For", "Step / Body:", "Break"],
+            "Laço For Infinito for(;;) na AST"
+        ),
+        (
+            "int main() { int x = -5; x -= 2; x *= 3; x /= 2; return x % 4; }",
+            ["UnOp: -", "Assign: -=", "Assign: *=", "Assign: /=", "BinOp: %"],
+            "Operador Unário (-), Atribuições Compostas e Módulo"
+        ),
+        (
+            'int main() { char s[] = "oi"; return 0; }',
+            ["VarDecl: s (Type: char[])", "LiteralString: \"oi\""],
+            "Vetor char[] com Tamanho Inferido por Literal String"
+        ),
+        (
+            "int f(int x, float y) { return x; } int main() { return f(10, 2.5); }",
+            ["Call: f", "Args:", "LiteralInt: 10", "LiteralFloat: 2.500000"],
+            "Chamada de Função com Múltiplos Argumentos"
         )
     ]
 
