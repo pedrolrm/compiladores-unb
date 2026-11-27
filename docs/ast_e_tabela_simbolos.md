@@ -189,11 +189,11 @@ O projeto conta com baterias completas de testes automatizados executáveis via 
 - **Testes Léxicos** (`tests/run_tests.py`): **11 testes** cobrindo literais, palavras-chave, comentários de linha/bloco, caracteres inválidos e casos de borda.
 - **Testes da AST** (`tests/test_ast.py`): **13 testes** validando a hierarquia sintática, precedência de operadores, estruturas de controle, `for (;;)`, parâmetros `(void)` e `char[]`.
 - **Testes Semânticos** (`tests/test_semantic.py`): **108 testes** cobrindo l-values, escopos aninhados, restrições aritméticas, coerções, divisão por zero, análise de fluxo de retorno, limites de vetores e ponto de entrada `main`.
-- **Testes End-to-End de Geração de Código** (`tests/test_codegen.py`): **31 testes** compilando código C para Python 3 e validando a execução real via `python3`.
+- **Testes End-to-End de Geração de Código** (`tests/test_codegen.py`): **48 testes** compilando código C para Python 3 e validando a execução real via `python3`.
 - **Testes Unitários de Geração de Código em C** (`tests/test_codegen_*.c`): **6 suítes** cobrindo variáveis/declarações (37 casos), globais/ponto de entrada, controle de fluxo, expressões (37 casos), laços (14 casos) e funções (5 casos).
 
 Para executar toda a bateria de testes integrados:
 ```bash
 make test
 ```
-Resultando em **163 testes automatizados em Python + 6 suítes unitárias em C aprovados (100% de sucesso)**.
+Resultando em **180 testes automatizados em Python + 6 suítes unitárias em C aprovados (100% de sucesso)**.

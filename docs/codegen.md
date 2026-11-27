@@ -75,4 +75,4 @@ Quando uma variável é declarada sem inicializador, o gerador atribui o valor p
 python3 saida.py
 ```
 
-A validação é feita por **31 testes end-to-end** em `tests/test_codegen.py` (executados via `make test`) e **6 suítes unitárias em C** (`tests/test_codegen_*.c`).
+A validação é feita por **48 testes end-to-end** em `tests/test_codegen.py` (executados via `make test`) e **6 suítes unitárias em C** (`tests/test_codegen_*.c`).
