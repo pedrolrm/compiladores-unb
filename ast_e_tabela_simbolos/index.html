@@ -16,12 +16,14 @@
         <link rel="prev" href="../gramatica/">
       
       
+        <link rel="next" href="../codegen/">
+      
       
         
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -596,6 +598,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codegen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Geração de Código (Python 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -998,20 +1027,30 @@
 <td><code>-c</code>, <code>--check</code></td>
 <td>Executa a validação sintática e semântica completa, retornando código <code>0</code> em caso de sucesso ou <code>1</code> se houver erros.</td>
 </tr>
+<tr>
+<td><code>-g</code>, <code>--codegen</code></td>
+<td>Executa toda a pipeline e imprime o código Python 3 gerado na saída padrão (<code>stdout</code>).</td>
+</tr>
+<tr>
+<td><code>-o</code>, <code>--output &lt;arquivo&gt;</code></td>
+<td>Executa toda a pipeline e grava o código Python 3 gerado no arquivo de saída informado.</td>
+</tr>
 </tbody>
 </table>
 <hr />
 <h2 id="6-suite-de-testes-automatizados">6. Suíte de Testes Automatizados</h2>
-<p>O projeto conta com baterias completas de testes automatizados executáveis via Python:</p>
+<p>O projeto conta com baterias completas de testes automatizados executáveis via Python e C:</p>
 <ul>
 <li><strong>Testes Léxicos</strong> (<code>tests/run_tests.py</code>): <strong>11 testes</strong> cobrindo literais, palavras-chave, comentários de linha/bloco, caracteres inválidos e casos de borda.</li>
-<li><strong>Testes da AST</strong> (<code>tests/test_ast.py</code>): <strong>6 testes</strong> validando a hierarquia sintática, precedência de operadores e estruturas de controle.</li>
-<li><strong>Testes Semânticos</strong> (<code>tests/test_semantic.py</code>): <strong>93 testes</strong> cobrindo l-values, escopos aninhados, restrições aritméticas, divisão por zero, análise de fluxo de retorno, limites de vetores e ponto de entrada <code>main</code>.</li>
+<li><strong>Testes da AST</strong> (<code>tests/test_ast.py</code>): <strong>13 testes</strong> validando a hierarquia sintática, precedência de operadores, estruturas de controle, <code>for (;;)</code>, parâmetros <code>(void)</code> e <code>char[]</code>.</li>
+<li><strong>Testes Semânticos</strong> (<code>tests/test_semantic.py</code>): <strong>108 testes</strong> cobrindo l-values, escopos aninhados, restrições aritméticas, coerções, divisão por zero, análise de fluxo de retorno, limites de vetores e ponto de entrada <code>main</code>.</li>
+<li><strong>Testes End-to-End de Geração de Código</strong> (<code>tests/test_codegen.py</code>): <strong>31 testes</strong> compilando código C para Python 3 e validando a execução real via <code>python3</code>.</li>
+<li><strong>Testes Unitários de Geração de Código em C</strong> (<code>tests/test_codegen_*.c</code>): <strong>6 suítes</strong> cobrindo variáveis/declarações (37 casos), globais/ponto de entrada, controle de fluxo, expressões (37 casos), laços (14 casos) e funções (5 casos).</li>
 </ul>
 <p>Para executar toda a bateria de testes integrados:
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>make<span class="w"> </span><span class="nb">test</span>
 </code></pre></div>
-Resultando em <strong>110 testes automatizados aprovados (100% de sucesso)</strong>.</p>
+Resultando em <strong>163 testes automatizados em Python + 6 suítes unitárias em C aprovados (100% de sucesso)</strong>.</p>
 
 
 
@@ -1070,7 +1109,7 @@ Resultando em <strong>110 testes automatizados aprovados (100% de sucesso)</stro
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
       
