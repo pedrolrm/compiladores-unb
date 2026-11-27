@@ -1,6 +1,6 @@
 # Gramática Livre de Contexto (GLC)
 
-Este documento descreve, em EBNF, a gramática da linguagem alvo **tal como implementada** em [`src/parser.y`](https://github.com/pedrolrm/compiladores-unb/blob/main/src/parser.y) (bison), com os terminais léxicos definidos em [`src/scanner.l`](https://github.com/pedrolrm/compiladores-unb/blob/main/src/scanner.l) (flex). Cada produção abaixo corresponde 1:1 a uma regra do parser simplificado para a futura geração de código Python.
+Este documento descreve, em EBNF, a gramática da linguagem alvo **tal como implementada** em [`src/parser.y`](https://github.com/pedrolrm/compiladores-unb/blob/main/src/parser.y) (bison), com os terminais léxicos definidos em [`src/scanner.l`](https://github.com/pedrolrm/compiladores-unb/blob/main/src/scanner.l) (flex). Cada produção abaixo corresponde 1:1 a uma regra do parser simplificado para a geração de código Python 3.
 
 ## Notação
 

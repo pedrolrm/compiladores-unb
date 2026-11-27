@@ -93,6 +93,20 @@ int main(void) {
     assert(codegen_emit_var_decl(out, &declaration, 0, NULL) == -1);
     fclose(out);
 
-    puts("Codegen #82: 36 casos de declaracoes aprovados e erros verificados.");
+    /* Vetor char[] com inicializador string literal (char s[] = "oi") */
+    ASTNode str_init = {0};
+    str_init.type = AST_LIT_STRING;
+    str_init.str_val = "oi";
+    expected_expression = &str_init;
+    expression_text = "\"oi\"";
+    declaration.type = AST_VAR_DECL;
+    declaration.name = "msg";
+    declaration.data_type.base = TYPE_CHAR;
+    declaration.data_type.is_array = true;
+    declaration.data_type.array_size = 3;
+    declaration.left = &str_init;
+    check_declaration(&declaration, 0, emit_expression, "msg = list(\"oi\")\n");
+
+    puts("Codegen #82: 37 casos de declaracoes aprovados e erros verificados.");
     return 0;
 }

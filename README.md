@@ -45,13 +45,21 @@ Este projeto consiste no desenvolvimento de um **Compilador/Transpilador** const
    ```
 
    **Opções disponíveis:**
-   - `--scan` (`-s`): Executa o Scanner e exibe a lista formatada de tokens.
+   - `--scan` (`-s`): Executa o Scanner e exibe a lista formatada de tokens (padrão).
    - `--parse` (`-p`): Executa o Parser e valida a sintaxe.
    - `--ast` (`-a`): Exibe a Árvore Sintática Abstrata (AST) formatada.
    - `--symbols` (`-t`): Exibe a Tabela de Símbolos hierárquica por escopos.
    - `--check` (`-c`): Executa a validação sintática e semântica completa.
+   - `--codegen` (`-g`): Executa todo o pipeline e imprime o código Python 3 gerado na saída padrão (`stdout`).
+   - `--output <arquivo.py>` (`-o`): Executa todo o pipeline e salva o código Python 3 gerado no arquivo especificado.
 
-3. Para executar as suítes de testes automatizados:
+3. Para transpilar um programa C para Python 3 e executá-lo:
+   ```bash
+   ./compilador -o saida.py tests/example.c
+   python3 saida.py
+   ```
+
+4. Para executar todas as suítes de testes automatizados (Scanner, AST, Semântica, Codegen E2E e testes unitários em C):
    ```bash
    make test
    ```

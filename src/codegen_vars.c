@@ -17,7 +17,14 @@ int codegen_emit_var_decl(FILE *out, const ASTNode *node, int indent_level,
     }
 
     if (node->data_type.is_array) {
-        if (node->data_type.array_size <= 0 || node->left) {
+        bool is_char_string_init = (node->data_type.base == TYPE_CHAR &&
+                                    node->left &&
+                                    node->left->type == AST_LIT_STRING);
+        if ((node->data_type.array_size <= 0 && !is_char_string_init) ||
+            (node->left && !is_char_string_init)) {
+            return -1;
+        }
+        if (is_char_string_init && !emit_expression) {
             return -1;
         }
     } else if (node->left && !emit_expression) {
@@ -30,7 +37,15 @@ int codegen_emit_var_decl(FILE *out, const ASTNode *node, int indent_level,
     fprintf(out, "%s = ", node->name);
 
     if (node->data_type.is_array) {
-        fprintf(out, "[%s] * %d", default_value, node->data_type.array_size);
+        if (node->left) {
+            fputs("list(", out);
+            if (emit_expression(out, node->left) != 0) {
+                return -1;
+            }
+            fputc(')', out);
+        } else {
+            fprintf(out, "[%s] * %d", default_value, node->data_type.array_size);
+        }
     } else if (node->left) {
         if (emit_expression(out, node->left) != 0) {
             return -1;

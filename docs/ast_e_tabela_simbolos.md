@@ -177,19 +177,23 @@ O executável `./compilador` oferece as seguintes opções:
 | `-a`, `--ast` | Executa o Parser e imprime a Árvore Sintática Abstrata (AST) formatada. |
 | `-t`, `--symbols` | Executa o Parser e a análise semântica, exibindo a Tabela de Símbolos hierárquica. |
 | `-c`, `--check` | Executa a validação sintática e semântica completa, retornando código `0` em caso de sucesso ou `1` se houver erros. |
+| `-g`, `--codegen` | Executa toda a pipeline e imprime o código Python 3 gerado na saída padrão (`stdout`). |
+| `-o`, `--output <arquivo>` | Executa toda a pipeline e grava o código Python 3 gerado no arquivo de saída informado. |
 
 ---
 
 ## 6. Suíte de Testes Automatizados
 
-O projeto conta com baterias completas de testes automatizados executáveis via Python:
+O projeto conta com baterias completas de testes automatizados executáveis via Python e C:
 
 - **Testes Léxicos** (`tests/run_tests.py`): **11 testes** cobrindo literais, palavras-chave, comentários de linha/bloco, caracteres inválidos e casos de borda.
-- **Testes da AST** (`tests/test_ast.py`): **6 testes** validando a hierarquia sintática, precedência de operadores e estruturas de controle.
-- **Testes Semânticos** (`tests/test_semantic.py`): **93 testes** cobrindo l-values, escopos aninhados, restrições aritméticas, divisão por zero, análise de fluxo de retorno, limites de vetores e ponto de entrada `main`.
+- **Testes da AST** (`tests/test_ast.py`): **13 testes** validando a hierarquia sintática, precedência de operadores, estruturas de controle, `for (;;)`, parâmetros `(void)` e `char[]`.
+- **Testes Semânticos** (`tests/test_semantic.py`): **108 testes** cobrindo l-values, escopos aninhados, restrições aritméticas, coerções, divisão por zero, análise de fluxo de retorno, limites de vetores e ponto de entrada `main`.
+- **Testes End-to-End de Geração de Código** (`tests/test_codegen.py`): **31 testes** compilando código C para Python 3 e validando a execução real via `python3`.
+- **Testes Unitários de Geração de Código em C** (`tests/test_codegen_*.c`): **6 suítes** cobrindo variáveis/declarações (37 casos), globais/ponto de entrada, controle de fluxo, expressões (37 casos), laços (14 casos) e funções (5 casos).
 
 Para executar toda a bateria de testes integrados:
 ```bash
 make test
 ```
-Resultando em **110 testes automatizados aprovados (100% de sucesso)**.
+Resultando em **163 testes automatizados em Python + 6 suítes unitárias em C aprovados (100% de sucesso)**.
